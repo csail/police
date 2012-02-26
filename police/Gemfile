@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'police-tracking', '>= 0.0.0', path: '../police-tracking'
+gem 'police-dataflow', '>= 0.0.0', path: '../police-dataflow'
 
 group :development do
   gem 'minitest', '>= 2.11.2'

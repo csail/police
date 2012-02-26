@@ -4,7 +4,7 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = "police-tracking"
+  s.name = "police-dataflow"
   s.version = "0.0.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.files = [
     "VERSION"
   ]
-  s.homepage = "http://github.com/pwnall/police-tracking"
+  s.homepage = "http://github.com/csail/police"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = "1.8.16"
