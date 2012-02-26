@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
   s.description = "This gem is an umbrella for all the police components"
   s.email = "victor@costan.us"
   s.extra_rdoc_files = [
+    "LICENSE.txt",
     "README.markdown"
   ]
   s.files = [
@@ -24,6 +25,7 @@ Gem::Specification.new do |s|
     "Rakefile",
     "VERSION",
     "lib/police.rb",
+    "police.gemspec",
     "test/helper.rb",
     "test/test_police.rb"
   ]
