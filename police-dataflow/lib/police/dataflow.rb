@@ -9,7 +9,7 @@ module DataFlow
   # @return [Object] either the given piece of data, or a proxy that should be
   #     used instead of it
   def label(data, label)
-    
+
   end
   
   # All the labels attached to a piece of data.

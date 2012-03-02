@@ -11,7 +11,7 @@ module Label
   # @return [Object] result, or the return value of calling
   #     Police::Dataflow.label on the result
   def flow_to(result, receiver, method, arguments, labeled)
-    Police::DataFlow.label result, self
+    Police::DataFlow::Labeler.label result, self
   end
   
   # Indicates messages that are not subject to labeling.
