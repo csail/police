@@ -1,4 +1,4 @@
-= police-vminfo
+# police-vminfo
 
 Collects information about the internals of the running Ruby VM.
 
@@ -11,7 +11,7 @@ Right now, this gem collects the Ruby exploration code used to build
 police-dataflow.
 
 
-== Copyright
+## Copyright
 
 Copyright (c) 2012 Massachusetts Institute of Technology. See LICENSE.txt for
 further details.
