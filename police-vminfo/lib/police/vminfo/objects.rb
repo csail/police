@@ -24,13 +24,22 @@ module VmInfo
   end
 
   # All loaded Ruby classes, obtained by walking the constants graph.
+  #
+  # Note that all classes are modules, so this is a subset of named_modules. 
   def self.named_classes
     named_modules.select { |m| m.kind_of? Class }
   end
   
-  # All loaded Ruby modules, obtained by 
+  # All loaded Ruby modules, obtained by querying ObjectSpace. 
   def self.all_modules
-    
+    ObjectSpace.each_object(Module).to_a
+  end
+  
+  # All loaded Ruby classes, obtained by querying ObjectSpace. 
+  #
+  # Note that all classes are modules, so this is a subset of all_modules. 
+  def self.all_classes
+    ObjectSpace.each_object(Class).to_a
   end
 end  # namespace VmInfo
 
