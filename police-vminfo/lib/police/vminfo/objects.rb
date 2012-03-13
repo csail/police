@@ -10,8 +10,12 @@ module VmInfo
       namespace = left.pop
       namespace.constants.each do |const_name|
         begin
-          const = namespace.const_get const_name
-        rescue NameError
+          const = if namespace.const_defined? const_name
+            namespace.const_get const_name
+          else
+            namespace.const_missing const_name
+          end
+        rescue LoadError, NameError
           # Delayed loading failure.
           next
         end
@@ -40,6 +44,30 @@ module VmInfo
   # Note that all classes are modules, so this is a subset of all_modules. 
   def self.all_classes
     ObjectSpace.each_object(Class).to_a
+  end
+  
+  # 
+  def self.core_modules
+    output =
+        `#{Gem.ruby} -e 'puts ObjectSpace.each_object(Module).to_a.join("\n")'`
+    output.split("\n").each do |name|
+      
+    end
+  end
+  
+  # Resolves the name of a constant into its value.
+  def self.constantize(name)
+    segments = name.split '::'
+    value = Object
+    names.each do |name|
+      next if name.empty?
+      value = if value.const_defined? name
+        value.const_get name
+      else
+        value.const_missing name
+      end
+    end
+    value    
   end
 end  # namespace VmInfo
 
