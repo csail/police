@@ -9,6 +9,21 @@ describe Police::VmInfo do
   HTTP_PATH = Net::HTTP.method(:new).source_location.first
   BUNDLER_PATH = Bundler.method(:setup).source_location.first
   
+  describe 'method_source' do
+    it 'recognizes stdlib methods' do
+      Police::VmInfo.method_source(Net::HTTP.method(:new)).must_equal :stdlib
+    end
+
+    it 'recognizes gem methods' do
+      Police::VmInfo.method_source(Bundler.method(:setup)).must_equal :gem
+    end
+
+    it 'recognizes app methods' do
+      Police::VmInfo.method_source(Police::VmInfo.method(:gem_path?)).
+                     must_equal :app
+    end
+  end
+  
   describe 'gem_path?' do
     it 'accepts Bundler path' do
       Police::VmInfo.gem_path?(BUNDLER_PATH).must_equal true

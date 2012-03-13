@@ -78,7 +78,7 @@ module VmInfo
   # @param [String] name a constant name, potentially including the scope
   #     operator ::
   # @return [Object] the value of the constant with the given name
-  # @raise NameError no constant with the given name is defined
+  # @raise [NameError] no constant with the given name is defined
   def self.constantize(name)
     segments = name.split '::'
     value = Object
