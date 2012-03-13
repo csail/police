@@ -1,8 +1,12 @@
 require File.expand_path('../helper.rb', File.dirname(__FILE__))
 
 describe Police::VmInfo do
-  MODULES =  [Kernel, Process::Sys, MiniTest]
-  CLASSES = [Object, Encoding::Converter, MiniTest::Unit]    
+  CORE_MODULES = [Kernel, Process::Sys]
+  GEM_MODULES = [MiniTest]
+  MODULES = CORE_MODULES + GEM_MODULES
+  CORE_CLASSES = [Object, Encoding::Converter]
+  GEM_CLASSES = [MiniTest::Unit]
+  CLASSES = CORE_CLASSES + GEM_CLASSES
   
   describe '#named_modules' do
     let(:result) { Police::VmInfo.named_modules }
@@ -73,7 +77,39 @@ describe Police::VmInfo do
       Police::VmInfo.all_classes.must_include anonymous_class
     end
   end
+
+  describe '#core_modules' do
+    let(:result) { Police::VmInfo.core_modules }
     
+    (CORE_MODULES + CORE_CLASSES).each do |const|
+      it "contains #{const}" do
+        result.must_include const
+      end
+    end
+    
+    (GEM_MODULES + GEM_CLASSES).each do |const|
+      it "does not contain #{const}" do
+        result.wont_include const
+      end
+    end
+  end
+  
+  describe '#code_classes' do
+    let(:result) { Police::VmInfo.core_classes }
+
+    (CORE_CLASSES).each do |const|
+      it "contains #{const}" do
+        result.must_include const
+      end
+    end
+    
+    (CORE_MODULES + GEM_MODULES + GEM_CLASSES).each do |const|
+      it "does not contain #{const}" do
+        result.wont_include const
+      end
+    end
+  end    
+
   def fixture_module
     Module.new do
       include Enumerable
@@ -157,7 +193,6 @@ describe Police::VmInfo do
       end
     end
   end
-  
   
   describe "#class_methods" do
     describe 'on the fixture module' do
@@ -248,6 +283,20 @@ describe Police::VmInfo do
       it 'does not contain class methods' do
         method_names.wont_include :police_new_class_method
       end
+    end
+  end
+  
+  describe "#constantize" do
+    it 'works on simple names' do
+      Police::VmInfo.constantize('Object').must_equal Object
+    end
+
+    it 'works on scoped names' do
+      Police::VmInfo.constantize('Process::Sys').must_equal Process::Sys
+    end
+
+    it 'works on global scoped names' do
+      Police::VmInfo.constantize('::Process::Sys').must_equal Process::Sys
     end
   end
 end

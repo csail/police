@@ -64,13 +64,33 @@ module VmInfo
   # The modules making up the Ruby VM implementation.
   #
   # @return [Array<Module>] the modules that are present in a vanilla Ruby
-  #     environment and have at least one native method
+  #     environment
   def self.core_modules
     output =
         `#{Gem.ruby} -e 'puts ObjectSpace.each_object(Module).to_a.join("\n")'`
+    modules = []
     output.split("\n").each do |name|
-      
+      next if name[0] == ?#
+      begin
+        mod = constantize name
+        next unless mod.kind_of? Module
+        modules << mod
+      rescue NameError, LoadError
+        # Delayed loading failure.
+        next
+      end
     end
+    modules
+  end
+  
+  # The classes making up the Ruby VM implementation.
+  #
+  # Note that all classes are modules, so this is a subset of core_modules.  
+  #
+  # @return [Array<Class>] the classes that are present in a vanilla Ruby
+  #     environment
+  def self.core_classes
+    core_modules.select { |m| m.kind_of? Class }
   end
   
   # All methods defined in a class or module.
@@ -122,7 +142,7 @@ module VmInfo
   def self.constantize(name)
     segments = name.split '::'
     value = Object
-    names.each do |name|
+    segments.each do |name|
       next if name.empty?
       value = if value.const_defined? name
         value.const_get name
