@@ -9,7 +9,7 @@ describe Police::VmInfo do
   HTTP_PATH = Net::HTTP.method(:new).source_location.first
   BUNDLER_PATH = Bundler.method(:setup).source_location.first
   
-  describe 'method_source' do
+  describe '#method_source' do
     it 'recognizes stdlib methods' do
       Police::VmInfo.method_source(Net::HTTP.method(:new)).must_equal :stdlib
     end
@@ -24,7 +24,7 @@ describe Police::VmInfo do
     end
   end
   
-  describe 'gem_path?' do
+  describe '#gem_path?' do
     it 'accepts Bundler path' do
       Police::VmInfo.gem_path?(BUNDLER_PATH).must_equal true
     end
@@ -42,7 +42,7 @@ describe Police::VmInfo do
     end
   end
   
-  describe 'stdlib_path?' do
+  describe '#stdlib_path?' do
     it 'rejects Bundler path' do
       Police::VmInfo.stdlib_path?(BUNDLER_PATH).must_equal false
     end
@@ -60,7 +60,7 @@ describe Police::VmInfo do
     end
   end
   
-  describe 'kernel_path?' do
+  describe '#kernel_path?' do
     it 'rejects Bundler path' do
       Police::VmInfo.kernel_path?(BUNDLER_PATH).must_equal false
     end

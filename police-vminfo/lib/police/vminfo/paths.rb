@@ -30,7 +30,7 @@ module VmInfo
   def self.stdlib_path?(path)
     # NOTE: assuming the convention that all directories are prepended to the
     #       load path throughout a program's execution
-    load_paths = $LOAD_PATH    
+    load_paths = $LOAD_PATH
     last_gem_index = 0
     (load_paths.length - 1).downto(0) do |index|
       if gem_path? load_paths[index]

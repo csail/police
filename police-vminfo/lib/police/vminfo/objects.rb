@@ -73,6 +73,46 @@ module VmInfo
     end
   end
   
+  # All methods defined in a class or module.
+  #
+  # @param [Module] module_or_class a Class or Module instance
+  # @return [Array<Method, UnboundMethod>] all the class and instance methods
+  #     defined by the given Class or Module
+  def self.all_methods(module_or_class)
+    class_methods(module_or_class) + instance_methods(module_or_class)
+  end
+
+  # All instance methods defined in a class or module.
+  #
+  # @param [Module] module_or_class a Class or Module instance
+  # @return [Array<Method, UnboundMethod>] all the instance methods defined by
+  #     the given Class or Module
+  def self.instance_methods(module_or_class)
+    module_or_class.instance_methods.tap do |array|
+      array.map! { |name| module_or_class.instance_method name }
+      array.select! { |method| method.owner == module_or_class }
+    end
+  end
+
+  # All class methods defined in a class or module.
+  #
+  # Note: the class methods of a class or module are the instance methods of the
+  # class or module's meta-class.
+  #
+  # @param [Module] module_or_class a Class or Module instance
+  # @return [Array<Method, UnboundMethod>] all the instance methods defined by
+  #     the given Class or Module
+  def self.class_methods(module_or_class)
+    # NOTE: this long-winded approach avoids creating new singleton classes
+    method_names = module_or_class.singleton_methods
+    return [] if method_names.empty?
+    singleton_class = module_or_class.singleton_class
+    method_names.tap do |array|
+      array.map! { |name| module_or_class.method name }
+      array.select! { |method| method.owner == singleton_class }
+    end
+  end
+  
   # Resolves the name of a constant into its value.
   #
   # @param [String] name a constant name, potentially including the scope
