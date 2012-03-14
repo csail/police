@@ -31,14 +31,14 @@ module VmInfo
     # NOTE: assuming the convention that all directories are prepended to the
     #       load path throughout a program's execution
     load_paths = $LOAD_PATH    
-    last_gem_index = 0
+    last_gem_index = -1
     (load_paths.length - 1).downto(0) do |index|
       if gem_path? load_paths[index]
         last_gem_index = index
         break
       end
     end
-    stdlib_paths = load_paths[((last_gem_index || -1) + 1)..-1]
+    stdlib_paths = load_paths[(last_gem_index + 1)..-1]
     stdlib_paths.any? { |stdlib_path| Paths.descendant? path, stdlib_path }
   end
   
