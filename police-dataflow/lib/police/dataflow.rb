@@ -26,3 +26,5 @@ end  # namespace Police
 
 require 'police/dataflow/label.rb'
 require 'police/dataflow/labeler.rb'
+require 'police/dataflow/proxy_base.rb'
+require 'police/dataflow/proxying.rb'
