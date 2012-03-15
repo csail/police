@@ -8,7 +8,9 @@ class ProxyingFixture
   def ==(other); end
   
   # Two arguments.
-  def add(arg1, arg2); end
+  def add(arg1, arg2)
+    "#{arg1}, #{arg2}"
+  end
   protected :add
   
   # Variable args.
@@ -23,14 +25,21 @@ class ProxyingFixture
 end  # class ProxyingFixture
 
 describe Police::DataFlow::Proxying do
+  describe '#add_class_method' do
+    before do
+      @proxy_class = Class.new Police::DataFlow::ProxyBase
+      
+    end
+  end
+  
   describe '#proxy_method_definition' do
     it 'returns a non-empty string for a public method' do
-      Police::DataFlow::Proxying.proxy_method_call(
+      Police::DataFlow::Proxying.proxy_method_body(
           ProxyingFixture.instance_method(:length), :public).length.wont_equal 0
     end
 
     it 'returns a non-empty string for a private method' do
-      Police::DataFlow::Proxying.proxy_method_call(
+      Police::DataFlow::Proxying.proxy_method_body(
           ProxyingFixture.instance_method(:length), :private).length.
           wont_equal 0
     end
@@ -72,34 +81,74 @@ describe Police::DataFlow::Proxying do
   end
 
   describe '#proxy_argument_list' do
-    it 'works for an argument-less method' do
-      Police::DataFlow::Proxying.proxy_argument_list(
-          ProxyingFixture.instance_method(:length)).must_equal ''
+    describe 'without block-capturing' do
+      it 'works for an argument-less method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:length), false).must_equal ''
+      end
+  
+      it 'works for a one-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:==), false).must_equal 'arg1'
+      end
+  
+      it 'works for a two-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:add), false).
+            must_equal 'arg1, arg2'
+      end
+  
+      it 'works for a variable-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.method(:route), false).must_equal '*args'
+      end
+  
+      it 'works for one fixed + variable-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:<=>), false).
+            must_equal 'arg1, *args'
+      end
+      
+      it 'works for two fixed + variable-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.method(:log), false).must_equal 'arg1, arg2, *args'
+      end
     end
 
-    it 'works for a one-argument method' do
-      Police::DataFlow::Proxying.proxy_argument_list(
-          ProxyingFixture.instance_method(:==)).must_equal 'arg1'
-    end
-
-    it 'works for a two-argument method' do
-      Police::DataFlow::Proxying.proxy_argument_list(
-          ProxyingFixture.instance_method(:add)).must_equal 'arg1, arg2'
-    end
-
-    it 'works for a variable-argument method' do
-      Police::DataFlow::Proxying.proxy_argument_list(
-          ProxyingFixture.method(:route)).must_equal '*args'
-    end
-
-    it 'works for one fixed + variable-argument method' do
-      Police::DataFlow::Proxying.proxy_argument_list(
-          ProxyingFixture.instance_method(:<=>)).must_equal 'arg1, *args'
-    end
-    
-    it 'works for two fixed + variable-argument method' do
-      Police::DataFlow::Proxying.proxy_argument_list(
-          ProxyingFixture.method(:log)).must_equal 'arg1, arg2, *args'
+    describe 'with block-capturing' do
+      it 'works for an argument-less method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:length), true).must_equal '&block'
+      end
+  
+      it 'works for a one-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:==), true).
+            must_equal 'arg1, &block'
+      end
+  
+      it 'works for a two-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:add), true).
+            must_equal 'arg1, arg2, &block'
+      end
+  
+      it 'works for a variable-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.method(:route), true).must_equal '*args, &block'
+      end
+  
+      it 'works for one fixed + variable-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.instance_method(:<=>), true).
+            must_equal 'arg1, *args, &block'
+      end
+      
+      it 'works for two fixed + variable-argument method' do
+        Police::DataFlow::Proxying.proxy_argument_list(
+            ProxyingFixture.method(:log), true).
+            must_equal 'arg1, arg2, *args, &block'
+      end
     end
   end
 end

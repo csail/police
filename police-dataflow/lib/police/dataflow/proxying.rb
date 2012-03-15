@@ -37,20 +37,20 @@ module Proxying
     proxy_class.__send__ acces, method_def.name
   end
   
-  # The definition of a proxy method.
+  # The full definition of a proxy method.
   #
   # @param [Method] method_def the definition of the method to be proxied
   # @param [Symbol] access the proxied method's access level (:public,
   #     :protected, or :private)
   # @return [String] a chunk of Ruby that can be eval'ed in the context of a
   #     proxy class to define a proxy for the given method
-  def self.proxy_method_definition(method_def, access)
+  def self.proxy_method_body(method_def, access)
     # NOTE: it might be tempting to attempt to pass a block to the proxied
     #       method at all times, and try to yield to the original block when our
     #       block is invoked; this would work most of the time, but it would
     #       break methods such as Enumerable#map and String#scan, whose behavior
     #       changes depending on whether or not a block is passed to them
-    ["def #{method_def.name}(#{proxy_argument_list(method_def)}, &block)",
+    ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
        "if &block",
          proxy_method_call(method_def, access, true),
        "else",
@@ -68,15 +68,8 @@ module Proxying
   #     that the proxy has received; if false, the block is ignored
   # @return [String] a chunk of Ruby that can be used to call the given method
   #     when defining a proxy for it
-  def self.proxy_method_call(method_def, access, include_block = false)
-    arg_list = proxy_argument_list method_def
-    if include_block
-      if arg_list.empty?
-        arg_list = '&block'
-      else
-        arg_list << ', &block'
-      end
-    end
+  def self.proxy_method_call(method_def, access, include_block)
+    arg_list = proxy_argument_list method_def, include_block
 
     if access == :public
       "@__police_proxied__.#{method_def.name}(#{arg_list})"
@@ -88,17 +81,20 @@ module Proxying
   # The list of arguments used to define a proxy for the given method.
   #
   # @param [Method] method_def the definition of the method to be proxied
+  # @param [Boolean] captue_block if true, the method captures the block that it
+  #     receives
   # @return [String] a chunk of Ruby that can be used as the argument list when
   #     defining a proxy for the given method
-  def self.proxy_argument_list(method_def)
-    if method_def.arity >= 0
+  def self.proxy_argument_list(method_def, capture_block)
+    arg_list = if method_def.arity >= 0
       # Fixed number of arguments.
-      (1..method_def.arity).map { |i| "arg#{i}" }.join(', ')
+      (1..method_def.arity).map { |i| "arg#{i}" }
     else
       # Variable number of arguments.
-      arg_list = ((1..(-method_def.arity - 1)).
-          map { |i| "arg#{i}" } << '*args').join(', ')
+      ((1..(-method_def.arity - 1)).map { |i| "arg#{i}" } << '*args')
     end
+    arg_list << '&block' if capture_block
+    arg_list.join ', '
   end
 end  # namespace Police::DataFlow::Proxying
 
