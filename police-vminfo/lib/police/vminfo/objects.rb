@@ -66,6 +66,8 @@ module VmInfo
   # @return [Array<Module>] the modules that are present in a vanilla Ruby
   #     environment
   def self.core_modules
+    return @core_modules if @core_modules
+    
     output =
         `#{Gem.ruby} -e 'puts ObjectSpace.each_object(Module).to_a.join("\n")'`
     modules = []
@@ -80,8 +82,10 @@ module VmInfo
         next
       end
     end
-    modules
+    
+    @core_modules = modules.freeze
   end
+  @core_modules = nil
   
   # The classes making up the Ruby VM implementation.
   #
@@ -90,8 +94,11 @@ module VmInfo
   # @return [Array<Class>] the classes that are present in a vanilla Ruby
   #     environment
   def self.core_classes
-    core_modules.select { |m| m.kind_of? Class }
+    return @core_classes if @core_classes
+    @core_classes = core_modules.select { |m| m.kind_of? Class }
+    @core_classes.freeze
   end
+  @core_classes = nil
   
   # All methods defined in a class or module.
   #

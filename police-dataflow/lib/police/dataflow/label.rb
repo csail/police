@@ -1,3 +1,7 @@
+module Police
+
+module DataFlow
+
 # Interface implemented by objects used as data flow labels.
 module Label
   # Opportunity to "taint" the result of an operation on labeled data.
@@ -24,4 +28,8 @@ module Label
   def flows_on?(method)
     true
   end
-end
+end  # module Police::DataFlow::Label
+
+end  # namespace Police::DataFlow
+
+end  # namespace Police
