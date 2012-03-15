@@ -21,17 +21,35 @@ module Proxying
     end
   end
 
-  
+  # Adds a method to a proxy class.
+  #
+  # @param [Module] proxy_class the class that will receive the proxy method
+  # @param [Method] method_def the definition of the method to be proxied
+  # @param [Symbol] access the proxied method's access level (:public,
+  #     :protected, or :private)
   def self.add_class_method(proxy_class, method_def, access)
-    return if proxy_class.method_defined?(method_def.name)  # No rework.
+    # Avoid redefining methods, because that blows up VM caches.
+    return if proxy_class.method_defined?(method_def.name)
     
-    method_def = proxy_method_def 
-        
-    # Set the appropriate access level.
+    # Define the method.
+    proxy_class.class_eval proxy_method_definition(method_def, access)
+    # Set its access level.
     proxy_class.__send__ acces, method_def.name
   end
   
-  def self.proxy_method_body(method_def, access)
+  # The definition of a proxy method.
+  #
+  # @param [Method] method_def the definition of the method to be proxied
+  # @param [Symbol] access the proxied method's access level (:public,
+  #     :protected, or :private)
+  # @return [String] a chunk of Ruby that can be eval'ed in the context of a
+  #     proxy class to define a proxy for the given method
+  def self.proxy_method_definition(method_def, access)
+    # NOTE: it might be tempting to attempt to pass a block to the proxied
+    #       method at all times, and try to yield to the original block when our
+    #       block is invoked; this would work most of the time, but it would
+    #       break methods such as Enumerable#map and String#scan, whose behavior
+    #       changes depending on whether or not a block is passed to them
     ["def #{method_def.name}(#{proxy_argument_list(method_def)}, &block)",
        "if &block",
          proxy_method_call(method_def, access, true),
@@ -44,6 +62,10 @@ module Proxying
   # The proxying call to a method.
   #
   # @param [Method] method_def the definition of the method to be proxied
+  # @param [Symbol] access the proxied method's access level (:public,
+  #     :protected, or :private)
+  # @param [Boolean] include_block if true, the method call passes the block
+  #     that the proxy has received; if false, the block is ignored
   # @return [String] a chunk of Ruby that can be used to call the given method
   #     when defining a proxy for it
   def self.proxy_method_call(method_def, access, include_block = false)

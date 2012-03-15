@@ -43,16 +43,21 @@ class ProxyBase < BasicObject
   def respond_to_missing?(name, include_private)
     return false unless @__police_proxied__.respond_to? name, include_private    
     
-    # There's a method 
+    # A method on the proxied object doesn't have a corresponding proxy.
+    # Fix this by creating all possible proxies.
     
-    ::Police::DataFlow::ProxyBase.add_class_methods 
+    # NOTE: this approach is cheaper than creating proxies one by one, because
+    #       it plays nice with method caches
+    
+    ::Police::DataFlow::Proxying.add_class_methods self.class,
+                                                   @__police_proxied.class
     
     # NOTE: we don't want to create unnecessary singleton classes
     target_methods = @__police_proxied__.singleton_methods true
     self_methods = self.singleton_methods
     if target_methods.length != self_methods.length
-      ::Police::DataFlow::ProxyBase.build_methods singleton_class,
-          @__police_proxied__.singleton_class, target_methods
+      ::Police::DataFlow::Proxying.add_singleton_methods self,
+          @__police_proxied__, target_methods
     end
   end
 end
