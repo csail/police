@@ -34,7 +34,7 @@ module Proxying
     # Define the method.
     proxy_class.class_eval proxy_method_definition(method_def, access)
     # Set its access level.
-    proxy_class.__send__ acces, method_def.name
+    proxy_class.__send__ access, method_def.name
   end
   
   # The full definition of a proxy method.
@@ -44,17 +44,22 @@ module Proxying
   #     :protected, or :private)
   # @return [String] a chunk of Ruby that can be eval'ed in the context of a
   #     proxy class to define a proxy for the given method
-  def self.proxy_method_body(method_def, access)
+  def self.proxy_method_definition(method_def, access)
     # NOTE: it might be tempting to attempt to pass a block to the proxied
     #       method at all times, and try to yield to the original block when our
     #       block is invoked; this would work most of the time, but it would
     #       break methods such as Enumerable#map and String#scan, whose behavior
     #       changes depending on whether or not a block is passed to them
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
-       "if &block",
-         proxy_method_call(method_def, access, true),
+       "if block",
+         proxy_method_call(method_def, access, false) + " do |*block_args|",
+           # TODO(pwnall): labeling
+           "yield(*block_args)",
+           # TODO(pwnall): labeling
+         "end",
        "else",
          proxy_method_call(method_def, access, false),
+         # TODO(pwnall): labeling
        "end",
      "end"].join ';'
   end

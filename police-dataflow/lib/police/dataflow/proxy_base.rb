@@ -28,15 +28,11 @@ class ProxyBase < BasicObject
   # Whenever possible, proxy methods are created on-the-fly, so that future
   # calls to the same method will be faster.
   def method_missing(name, *args, &block)
-    if respond_to_missing?(name, true)
-      # The proxy method was defined in respond_to_missing.
-      # We'll have a fast path for future method calls.
-      __send__ name, *args, &block
-    else
-      # Slow proxy path.
-      # TODO(pwnall): labeling
-      @__police_proxied__.__send__ name, *args, &block
-    end
+    # Build a fast path for future method calls, if possible.
+    respond_to_missing? name, true
+
+    # TODO(pwnall): labeling
+    @__police_proxied__.__send__ name, *args, &block
   end
   
   # Called when Object#respond_to? returns false.
@@ -54,11 +50,12 @@ class ProxyBase < BasicObject
     
     # NOTE: we don't want to create unnecessary singleton classes
     target_methods = @__police_proxied__.singleton_methods true
-    self_methods = self.singleton_methods
-    if target_methods.length != self_methods.length
+    unless target_methods.empty?
       ::Police::DataFlow::Proxying.add_singleton_methods self,
           @__police_proxied__, target_methods
     end
+    
+    true
   end
 end
 

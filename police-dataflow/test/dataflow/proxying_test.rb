@@ -14,32 +14,95 @@ class ProxyingFixture
   protected :add
   
   # Variable args.
-  def self.route(*rest); end
+  def route(*rest)
+    if block_given?
+      yield *rest
+    else
+      rest
+    end
+  end
 
   # One fixed + variable args.
   def <=>(arg1, *rest); end
 
   # Two fixed + variable args.
-  def self.log(arg1, arg2, *rest); end
-  private_class_method :log
+  def log(arg1, arg2, *rest); end
+  private :log
 end  # class ProxyingFixture
 
 describe Police::DataFlow::Proxying do
   describe '#add_class_method' do
     before do
-      @proxy_class = Class.new Police::DataFlow::ProxyBase
+      @proxy_class = Class.new BasicObject
+      @proxied = ProxyingFixture.new
+      @proxy = @proxy_class.new
+      @proxy.instance_exec(@proxied) { |p| @__police_proxied__ = p }
+    end
+    
+    describe 'with protected method with arguments' do
+      before do
+        @method = ProxyingFixture.instance_method :add
+        Police::DataFlow::Proxying.add_class_method @proxy_class, @method,
+                                                    :protected
+      end
       
+      it 'should define the proxying method' do
+        @proxy_class.protected_method_defined?(:add).must_equal true        
+      end
+      
+      it "should have the proxying method's arity match the original" do
+        @proxy_class.instance_method(:add).arity.must_equal @method.arity        
+      end
+      
+      it 'should proxy the method' do
+        @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
+      end
+    end
+    
+    describe 'with public method with variable arguments and blocks' do
+      before do
+        @method = ProxyingFixture.instance_method :route
+        Police::DataFlow::Proxying.add_class_method @proxy_class, @method,
+                                                    :public
+      end
+      
+      it 'should define the proxying method' do
+        @proxy_class.public_method_defined?(:route).must_equal true        
+      end
+      
+      it "should have the proxying method's arity match the original" do
+        @proxy_class.instance_method(:route).arity.must_equal @method.arity        
+      end
+      
+      it 'should proxy the method without a block' do
+        @proxy.route('One', 'Two').must_equal ['One', 'Two']
+      end
+
+      it 'should proxy the method with a block' do
+        result = []
+        @proxy.route 'One', 'Two' do |*args|
+          result << args
+        end
+        result.must_equal [['One', 'Two']]
+      end
+    end
+
+    it 'should proxy public methods that take blocks' do
+      Police::DataFlow::Proxying.add_class_method @proxy_class,
+          ProxyingFixture.instance_method(:add), :protected
+      @proxy_class.protected_method_defined?(:add).must_equal true
+      @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
     end
   end
   
   describe '#proxy_method_definition' do
     it 'returns a non-empty string for a public method' do
-      Police::DataFlow::Proxying.proxy_method_body(
+      Police::DataFlow::Proxying.proxy_method_definition(
           ProxyingFixture.instance_method(:length), :public).length.wont_equal 0
     end
 
     it 'returns a non-empty string for a private method' do
-      Police::DataFlow::Proxying.proxy_method_body(
+      Police::DataFlow::Proxying.proxy_method_definition(
           ProxyingFixture.instance_method(:length), :private).length.
           wont_equal 0
     end
@@ -75,7 +138,7 @@ describe Police::DataFlow::Proxying do
 
     it 'works for a private method with arguments and a block' do
       Police::DataFlow::Proxying.proxy_method_call(
-          ProxyingFixture.method(:log), :private, true).must_equal(
+          ProxyingFixture.instance_method(:log), :private, true).must_equal(
           '@__police_proxied__.__send__(:log, arg1, arg2, *args, &block)')
     end
   end
@@ -100,7 +163,7 @@ describe Police::DataFlow::Proxying do
   
       it 'works for a variable-argument method' do
         Police::DataFlow::Proxying.proxy_argument_list(
-            ProxyingFixture.method(:route), false).must_equal '*args'
+            ProxyingFixture.instance_method(:route), false).must_equal '*args'
       end
   
       it 'works for one fixed + variable-argument method' do
@@ -111,7 +174,8 @@ describe Police::DataFlow::Proxying do
       
       it 'works for two fixed + variable-argument method' do
         Police::DataFlow::Proxying.proxy_argument_list(
-            ProxyingFixture.method(:log), false).must_equal 'arg1, arg2, *args'
+            ProxyingFixture.instance_method(:log), false).
+            must_equal 'arg1, arg2, *args'
       end
     end
 
@@ -135,7 +199,8 @@ describe Police::DataFlow::Proxying do
   
       it 'works for a variable-argument method' do
         Police::DataFlow::Proxying.proxy_argument_list(
-            ProxyingFixture.method(:route), true).must_equal '*args, &block'
+            ProxyingFixture.instance_method(:route), true).
+            must_equal '*args, &block'
       end
   
       it 'works for one fixed + variable-argument method' do
@@ -146,7 +211,7 @@ describe Police::DataFlow::Proxying do
       
       it 'works for two fixed + variable-argument method' do
         Police::DataFlow::Proxying.proxy_argument_list(
-            ProxyingFixture.method(:log), true).
+            ProxyingFixture.instance_method(:log), true).
             must_equal 'arg1, arg2, *args, &block'
       end
     end
