@@ -7,6 +7,26 @@ module DataFlow
 # ProxyBase is the superclass for all proxy classes, which makes it visible to
 # application code. For this reason, we avoid defining any methods there.
 module Proxying
+  # Creates a class whose instances proxy instances of a class.
+  #
+  # @param [Class] klass the class whose instances will be proxied by instances
+  #     of the returned class
+  # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
+  #     instances of the given class
+  def self.create_proxy_class(klass)
+    Class.new Police::DataFlow::ProxyBase
+  end
+  
+  # Creates proxies for a class' instance methods.
+  #
+  # The proxy methods are defined as instance methods for the proxying class,
+  # because all the proxied objects that have the same class will need the same
+  # proxies.
+  #
+  # @param [Class] proxy_class a Police::DataFlow::Proxy subclass that will
+  #     receive the new proxy method definitions
+  # @param [Class] klass the class whose instance methods will be proxied
+  # @return [NilClass] nil
   def self.add_class_methods(proxy_class, klass)
     # NOTE: this is thread-safe because, at worst, the effort of adding methods
     #       will be re-duplicated
@@ -19,6 +39,7 @@ module Proxying
     klass.private_instance_methods(true).each do |method|
       add_class_method proxy_class, klass.instance_method(method), :private
     end
+    nil
   end
 
   # Adds a method to a proxy class.
@@ -54,8 +75,9 @@ module Proxying
        "if block",
          proxy_method_call(method_def, access, false) + " do |*block_args|",
            # TODO(pwnall): labeling
-           "yield(*block_args)",
+           "block_return = yield(*block_args)",
            # TODO(pwnall): labeling
+           "next block_return",
          "end",
        "else",
          proxy_method_call(method_def, access, false),

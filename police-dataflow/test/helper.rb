@@ -17,4 +17,7 @@ require 'police-dataflow'
 class MiniTest::Unit::TestCase
 end
 
+Dir[File.expand_path('helpers/**/*.rb', File.dirname(__FILE__))].
+    each { |h| require h }
+
 MiniTest::Unit.autorun

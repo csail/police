@@ -1,36 +1,41 @@
 require File.expand_path('../helper.rb', File.dirname(__FILE__))
 
-class ProxyingFixture
-  # Zero arguments.
-  def length; end
-  
-  # One argument.
-  def ==(other); end
-  
-  # Two arguments.
-  def add(arg1, arg2)
-    "#{arg1}, #{arg2}"
-  end
-  protected :add
-  
-  # Variable args.
-  def route(*rest)
-    if block_given?
-      yield *rest
-    else
-      rest
+describe Police::DataFlow::Proxying do
+  describe '#create_proxy_class' do
+    let(:result) do
+      Police::DataFlow::Proxying.create_proxy_class ProxyingFixture
+    end
+    
+    it 'should create a Police::DataFlow::ProxyBase subclass' do
+      result.superclass.must_equal Police::DataFlow::ProxyBase
     end
   end
+  
+  describe '#add_class_methods' do
+    before do
+      @proxy_class = Class.new(BasicObject) { alias object_id __id__ }
+      @proxied = ProxyingFixture.new
+      @proxy = @proxy_class.new
+      @proxy.instance_exec(@proxied) { |p| @__police_proxied__ = p }
 
-  # One fixed + variable args.
-  def <=>(arg1, *rest); end
+      Police::DataFlow::Proxying.add_class_methods @proxy_class, ProxyingFixture
+    end
+    
+    it 'adds public methods' do
+      @proxy_class.public_method_defined?(:length).must_equal true
+      @proxy_class.public_method_defined?(:==).must_equal true
+      @proxy_class.public_method_defined?(:<=>).must_equal true
+    end
 
-  # Two fixed + variable args.
-  def log(arg1, arg2, *rest); end
-  private :log
-end  # class ProxyingFixture
-
-describe Police::DataFlow::Proxying do
+    it 'adds a protected method' do
+      @proxy_class.protected_method_defined?(:add).must_equal true
+    end
+    
+    it 'adds a private method' do
+      @proxy_class.private_method_defined?(:log).must_equal true
+    end
+  end
+  
   describe '#add_class_method' do
     before do
       @proxy_class = Class.new BasicObject
@@ -46,15 +51,15 @@ describe Police::DataFlow::Proxying do
                                                     :protected
       end
       
-      it 'should define the proxying method' do
+      it 'defines the proxying method' do
         @proxy_class.protected_method_defined?(:add).must_equal true        
       end
       
-      it "should have the proxying method's arity match the original" do
+      it "has the proxying method's arity match the original" do
         @proxy_class.instance_method(:add).arity.must_equal @method.arity        
       end
       
-      it 'should proxy the method' do
+      it 'proxies the method' do
         @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
       end
     end
@@ -66,19 +71,19 @@ describe Police::DataFlow::Proxying do
                                                     :public
       end
       
-      it 'should define the proxying method' do
+      it 'defines the proxying method' do
         @proxy_class.public_method_defined?(:route).must_equal true        
       end
       
-      it "should have the proxying method's arity match the original" do
+      it "has the proxying method's arity match the original" do
         @proxy_class.instance_method(:route).arity.must_equal @method.arity        
       end
       
-      it 'should proxy the method without a block' do
+      it 'proxies the method without a block' do
         @proxy.route('One', 'Two').must_equal ['One', 'Two']
       end
 
-      it 'should proxy the method with a block' do
+      it 'proxies the method with a block' do
         result = []
         @proxy.route 'One', 'Two' do |*args|
           result << args
@@ -87,7 +92,7 @@ describe Police::DataFlow::Proxying do
       end
     end
 
-    it 'should proxy public methods that take blocks' do
+    it 'proxies protected methods' do
       Police::DataFlow::Proxying.add_class_method @proxy_class,
           ProxyingFixture.instance_method(:add), :protected
       @proxy_class.protected_method_defined?(:add).must_equal true
