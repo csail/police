@@ -2,8 +2,23 @@ module Police
 
 module DataFlow
 
-# Interface implemented by objects used as data flow labels.
-module Label
+# Superclass for objects used as data flow labels.
+class Label
+  # True for labels that automatically propagate across operations.
+  #
+  # Labels that indicate privacy auto-flow. For example, an auto-generated
+  # message that contains a user's phone number is just as sensitive as the
+  # phone number.
+  # 
+  # Labels that indicate sanitization do not auto-flow. For example, a substring
+  # of an HTML-sanitized string is not necessarily HTML-sanitized.
+  #
+  # @return [Boolean] if true, the label will be automatically added to objects
+  #     whose value is likely to be derived from other labeled objects
+  def autoflow?
+    true
+  end
+  
   # Opportunity to "taint" the result of an operation on labeled data.
   #
   # @param [Object] result the result of the method call

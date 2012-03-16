@@ -26,9 +26,13 @@ class ProxyBase < BasicObject
   #     instances don't have this luxury
   def initialize(proxied, proxy_class)
     @__police_proxied__ = proxied
-    @__police_class__ = proxy_class
     @__police_labels__ = {}
-    # TODO(pwnall): locks for multi-threading
+
+    # Holds the object's class, because Object#class is not available.
+    @__police_class__ = proxy_class
+
+    # Labels that flow automatically across method calls.
+    @__police_autoflow_labels__ = {}
   end
 
   # Handles method calls to the proxied object.
