@@ -3,7 +3,14 @@ class ProxyingFixture
   def length; end
   
   # One argument.
-  def ==(other); end
+  def ==(other)
+    '== proxied'
+  end
+  
+  # Reserved method proxying test.
+  def !=(other)
+    '!= proxied'
+  end
   
   # Two arguments.
   def add(arg1, arg2)

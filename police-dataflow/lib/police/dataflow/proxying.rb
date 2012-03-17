@@ -7,14 +7,15 @@ module DataFlow
 # ProxyBase is the superclass for all proxy classes, which makes it visible to
 # application code. For this reason, we avoid defining any methods there.
 module Proxying
-  # Creates a class whose instances proxy instances of a class.
+  # Creates a label-holding proxy for an object.
   #
-  # @param [Class] klass the class whose instances will be proxied by instances
-  #     of the returned class
-  # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
-  #     instances of the given class
-  def self.create_proxy_class(klass)
-    Class.new Police::DataFlow::ProxyBase
+  # @param [Object] proxied the object to be proxied
+  # @return [Police::DataFlow::ProxyBase] an object that can carry labels, and
+  #     performs label-propagation as it redirects received messages to the
+  #     proxied object
+  def self.proxy(proxied)
+    proxy_class = Police::DataFlow::Proxies.for proxied.class
+    proxy_class.new proxied, proxy_class
   end
   
   # Creates proxies for a class' instance methods.
@@ -50,7 +51,10 @@ module Proxying
   #     :protected, or :private)
   def self.add_class_method(proxy_class, method_def, access)
     # Avoid redefining methods, because that blows up VM caches.
-    return if proxy_class.method_defined?(method_def.name)
+    if proxy_class.method_defined?(method_def.name) ||
+        proxy_class.private_method_defined?(method_def.name)
+      return
+    end
     
     # Define the method.
     proxy_class.class_eval proxy_method_definition(method_def, access)

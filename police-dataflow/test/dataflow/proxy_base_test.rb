@@ -3,9 +3,10 @@ require File.expand_path('../helper.rb', File.dirname(__FILE__))
 describe Police::DataFlow::ProxyBase do
   before do
     @proxied = ProxyingFixture.new
-    @proxy_class = Police::DataFlow::Proxying.create_proxy_class ProxyingFixture
+    @proxy_class = Police::DataFlow::Proxies.for ProxyingFixture
     @proxy = @proxy_class.new @proxied, @proxy_class
   end
+  after { Police::DataFlow::Proxies.clear_cache }
   
   it 'proxies public methods' do
     # NOTE: this test exercises the slow path in method_missing
@@ -24,14 +25,17 @@ describe Police::DataFlow::ProxyBase do
       # NOTE: this test exercises the auto-generated proxy method's fast path
       @proxy.route('One', 'Two').must_equal ['One', 'Two']
     end
+    
+    it 'can still build proxies' do
+      other_proxy = @proxy_class.new ProxyingFixture.new, @proxy_class
+      other_proxy.route('One', 'Two').must_equal ['One', 'Two']
+    end
   end
   
   it 'proxies public methods with blocks' do
     # NOTE: this test exercises the slow path in method_missing
     result = []
-    @proxy.route 'One', 'Two' do |*args|
-      result << args
-    end
+    @proxy.route('One', 'Two') { |*args| result << args }
     result.must_equal [['One', 'Two']]
   end
   
@@ -46,9 +50,7 @@ describe Police::DataFlow::ProxyBase do
     it 'still proxies public methods with blocks' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
       result = []
-      @proxy.route 'One', 'Two' do |*args|
-        result << args
-      end
+      @proxy.route('One', 'Two') { |*args| result << args }
       result.must_equal [['One', 'Two']]
     end
   end  
@@ -85,4 +87,12 @@ describe Police::DataFlow::ProxyBase do
       @proxy_class.public_method_defined?(:magic_meth).must_equal false
     end    
   end
+  
+  it 'proxies ==' do
+    (@proxy == nil).must_equal '== proxied'
+  end
+
+  it 'proxies !=' do
+    (@proxy != nil).must_equal '!= proxied'
+  end  
 end

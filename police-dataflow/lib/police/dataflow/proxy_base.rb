@@ -16,6 +16,13 @@ class ProxyBase < BasicObject
   # Use the Police::DataFlow API instead of reading this attribute directly.
   attr_reader :__police_labels__
   
+  # The subset of this object's labels whose autoflow? method returns true.
+  #
+  # @private
+  # This is an optimization used by the Police::DataFlow implementation. Do not
+  # read it directly.
+  attr_reader :__police_autoflowing__
+  
   # Creates a proxied object.
   #
   # @param [Object] proxied the object that will receive messages sent to the
@@ -32,7 +39,7 @@ class ProxyBase < BasicObject
     @__police_class__ = proxy_class
 
     # Labels that flow automatically across method calls.
-    @__police_autoflow_labels__ = {}
+    @__police_autoflowing__ = {}
   end
 
   # Handles method calls to the proxied object.
@@ -82,6 +89,15 @@ class ProxyBase < BasicObject
   # Ruby 1.9 throws scary warnings if proxies define object_id.
   # In either case, it's probably best to have it match __id__.
   alias object_id __id__
+  
+  # Remove the == and != implementations from BasicObject, so that we can proxy
+  # them. This is particularly important for String.
+  #
+  # NOTE: We don't remove equal?, because Object's documentation says that
+  #       BasicObject subclasses should really not override it. We also don't
+  #       remove instance_eval and instance_exec, so the code that gets executed
+  #       using them will still have its method calls proxied correctly.
+  undef ==, !=
 end
 
 end  # namespace Police::DataFlow

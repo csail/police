@@ -1,16 +1,6 @@
 require File.expand_path('../helper.rb', File.dirname(__FILE__))
 
 describe Police::DataFlow::Proxying do
-  describe '#create_proxy_class' do
-    let(:result) do
-      Police::DataFlow::Proxying.create_proxy_class ProxyingFixture
-    end
-    
-    it 'should create a Police::DataFlow::ProxyBase subclass' do
-      result.superclass.must_equal Police::DataFlow::ProxyBase
-    end
-  end
-  
   describe '#add_class_methods' do
     before do
       @proxy_class = Class.new(BasicObject) { alias object_id __id__ }
@@ -85,9 +75,7 @@ describe Police::DataFlow::Proxying do
 
       it 'proxies the method with a block' do
         result = []
-        @proxy.route 'One', 'Two' do |*args|
-          result << args
-        end
+        @proxy.route('One', 'Two') { |*args| result << args }
         result.must_equal [['One', 'Two']]
       end
     end
