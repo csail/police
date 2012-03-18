@@ -53,7 +53,7 @@ class ProxyBase < BasicObject
     if block
       @__police_proxied__.__send__ name, *args do |*block_args|
         # TODO(pwnall): labeling
-        block_return = yield *block_args
+        block_return = yield(*block_args)
         # TODO(pwnall): labeling
         next block_return
       end

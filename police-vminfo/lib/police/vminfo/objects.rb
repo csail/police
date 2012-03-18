@@ -149,12 +149,12 @@ module VmInfo
   def self.constantize(name)
     segments = name.split '::'
     value = Object
-    segments.each do |name|
-      next if name.empty?
-      value = if value.const_defined? name
-        value.const_get name
+    segments.each do |segment|
+      next if segment.empty?
+      value = if value.const_defined? segment
+        value.const_get segment
       else
-        value.const_missing name
+        value.const_missing segment
       end
     end
     value    

@@ -9,7 +9,7 @@ describe Police::VmInfo do
     end
 
     it "should have a bunch of letters, numbers and .s" do
-      result.must_match /\A\w+[0-9.]+\Z/
+      result.must_match(/\A\w+[0-9.]+\Z/)
     end
   end
 end

@@ -21,7 +21,7 @@ class ProxyingFixture
   # Variable args.
   def route(*rest)
     if block_given?
-      yield *rest
+      yield(*rest)
     else
       rest
     end
