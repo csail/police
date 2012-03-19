@@ -14,11 +14,11 @@ require 'rake'
 require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "police-dataflow"
+  gem.name = "police-rack"
   gem.homepage = "http://github.com/csail/police"
   gem.license = "MIT"
-  gem.summary = %Q{Data flow label propagation}
-  gem.description = %Q{Pure Ruby implementtion of data flow label propagation.}
+  gem.summary = %Q{Rack middleware that integrates police}
+  gem.description = %Q{Labels HTTP input with police labels and provides hooks for filtering the application output}
   gem.email = "victor@costan.us"
   gem.authors = ["Victor Costan"]
   # dependencies defined in Gemfile

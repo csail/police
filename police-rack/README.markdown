@@ -1,6 +1,6 @@
-# police-dataflow
+# police-rack
 
-Pure Ruby implementation of data flow label propagation. 
+Rack middleware that labels HTTP input and adds hooks for filtering the output. 
 
 
 ## Copyright

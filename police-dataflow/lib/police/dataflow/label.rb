@@ -19,29 +19,37 @@ class Label
     true
   end
   
+  # An opportunity for a label to reject being used on a piece of data.
+  #
+  # @param [Object] data the data that will receive this label
+  # @return [Boolean] true if this label can be used with the given piece of
+  #     data; if this method returns false, the labeling code will raise an
+  #     exception
+  def accepts?(data)
+    true
+  end
+
+  # The name of the label's method
+  #
+  # @param [Symbol] method_name the name of the method that will be intercepted
+  #     by the label method.
+  # @return [Symbol, NilClass] the name of the label's instance method that will
+  #     be called after the intercepted method
+  def call_hook_name(method_name, klass)
+    true
+  end
+  
+  
   # Opportunity to "taint" the result of an operation on labeled data.
   #
   # @param [Object] result the result of the method call
   # @param [Object] receiver the method's receiver
-  # @param [Symbol] method the name of the method that was called
-  # @param [Array] arguments the arguments passed to the method
-  # @param [Object] labeled the object labeled by this label that triggered the
-  #     flow_to call; this is either the receiver, or one of the arguments
+  # @param [Symbol] method_name the name of the method that was called
+  # @param [Array] args the arguments passed to the method
   # @return [Object] result, or the return value of calling
   #     Police::Dataflow.label on the result
-  def flow_to(result, receiver, method, arguments, labeled)
+  def hook(result, receiver, method_name, *args)
     Police::DataFlow::Labeler.label result, self
-  end
-  
-  # Indicates messages that are not subject to labeling.
-  #
-  # @param [Symbol] method the name of the method that the caller is trying to
-  #    optimize 
-  # @return [Boolean] true if the result of calling this method on labeled
-  #     data never needs to be labeled; for example, methods that return the
-  #     receiver should not be subject to labeling
-  def flows_on?(method)
-    true
   end
 end  # module Police::DataFlow::Label
 
