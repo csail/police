@@ -8,34 +8,23 @@ module DataFlow
   # @return [BasicObject] either the given piece of data, or a proxy that should
   #     be used instead of it
   def self.label(data, label)
-    labels_hash = data.__police_labels__
-    if labels_hash.nil?
-      # Unlabeled data.
+    label_set = data.__police_labels__
+    if label_set.nil?
       proxied = data
-      labels_hash = {}
-      autoflows_hash = {}
+      label_set = {}
+      autoflow_set = {}
     else
       proxied = data.__police_proxied__
-      autoflows_hash = data.__police_autoflows__
+      autoflow_set = data.__police_autoflows__
     end
     
-    label_key = label.class.__id__
-    if labels_hash.has_key? label_key
-      # The object already has this kind of label. 
-      labels[label_key][label] = true
-    else
-      # This is a new kind of label, so we need to create a new proxy.
-      label_entry = { label => true}
-      labels_hash[label_key] = label_entry
-      autoflows_hash[label_key] = label_entry
-      
-      
-      data.__police_autoflowing__[label] = label_hash if label.autoflow?
-      
-      data = Police::DataFlow::Proxying.proxy label.class
+    if Police::DataFlow::Labeling.add_label_to_set label, label_set,
+                                                   autoflow_set
+      data = Police::DataFlow::Proxying.proxy proxied, label_set
+      data.__police_labels__ = label_set
+      data.__police_autoflowing__ = autoflow_set
+      data
     end
-    data.__police_labels__[label] = true
-    data.__police_autoflowing__[label] = true if label.autoflow?
     data
   end
   
@@ -47,6 +36,34 @@ module DataFlow
     return [] unless label_hash = data.__police_labels__
     label_hash.keys
   end
+
+# Label algebra.
+module Labeling
+  # Adds a label to the set of labels held by an object's proxy.
+  #
+  # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] label_set the
+  #     set of all labels 
+  # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] autoflow_set
+  #     the set of labels whose autoflow? method returned true
+  # @return [Boolean] false if the set already had a label of the same type, so
+  #     the proxy holding the set can still be used; true if the set had to be
+  #     expanded, so a new proxy is needed
+  def self.add_label_to_set(label, label_set, autoflow_set)
+    label_class = label.class
+    label_key = label_class.__id__
+    if label_set.has_key? label_key
+      label_set[label_key][label] = true
+      # NOTE: autoflow_set uses use the same hash, so no work is necessary
+      return false
+    end
+    
+    label_entry = { label => true }
+    label_set[label_key] = label_entry
+    autoflow_set[label_key] = label_entry if label_class.autoflow?
+    true
+  end
+end  # namespace Police::DataFlow::Labeling
+  
 end  # namespace Police::DataFlow
 
 end  # namespace Police
