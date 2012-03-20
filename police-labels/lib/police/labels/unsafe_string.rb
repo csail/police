@@ -5,7 +5,7 @@ module Labels
 # Marks strings that are read from the outside environment with no sanitization.
 class UnsafeString < Police::DataFlow::Label
   # @see Police::DataFlow::Label#autoflow?
-  def autoflow?
+  def self.autoflow?
     true
   end
   
@@ -14,11 +14,15 @@ class UnsafeString < Police::DataFlow::Label
     data.kind_of? String
   end
   
-  # @see Police::DataFlow::Label#call_hook_name
-  def call_hook_name(method_name, klass)
+  # @see Police::DataFlow::Label#return_filter
+  def self.return_filter(method_name)
     nil
   end
   
+  # @see Police::DataFlow::Label#method_filter
+  def self.yield_args_filter(method_name)
+    nil
+  end
 end  # namepsace Police::Labels::UnsafeString
   
 end  # namespace Labels

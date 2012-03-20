@@ -11,7 +11,7 @@ class UnsafeStream < Police::DataFlow::Label
   end
   
   # @see Police::DataFlow::Label#autoflow?
-  def autoflow?
+  def self.autoflow?
     false
   end
   
@@ -20,8 +20,8 @@ class UnsafeStream < Police::DataFlow::Label
     data.kind_of?(IO) || data.kind_of?(StringIO)
   end
   
-  # @see Police::DataFlow::Label#call_hook_name
-  def call_hook_name(method_name, klass)
+  # @see Police::DataFlow::Label#return_filter
+  def self.return_filter(method_name)
     case method_name
     when :read
       :read
@@ -30,12 +30,17 @@ class UnsafeStream < Police::DataFlow::Label
     end
   end
   
+  # @see Police::DataFlow::Label#yield_args_filter
+  def self.yield_args_filter(method_name)
+    nil
+  end
+  
   # Adds a label to the read's return value.
   # @see IO#read
   def read(return_value, receiver, *args)
     Police::DataFlow.label return_value, @label
   end
-end  # namepsace Police::Labels::UnsafeStream
+end  # namespace Police::Labels::UnsafeStream
   
 end  # namespace Labels
 

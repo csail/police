@@ -64,29 +64,32 @@ module Proxying
   
   # The full definition of a proxy method.
   #
+  # @param [Array<Police::DataFlow::Label>] label_classes the label classes
+  #     supported by the proxy class
   # @param [Method] method_def the definition of the method to be proxied
   # @param [Symbol] access the proxied method's access level (:public,
   #     :protected, or :private)
   # @return [String] a chunk of Ruby that can be eval'ed in the context of a
   #     proxy class to define a proxy for the given method
-  def self.proxy_method_definition(method_def, access)
+  def self.proxy_method_definition(label_classes, method_def, access)
     # NOTE: it might be tempting to attempt to pass a block to the proxied
     #       method at all times, and try to yield to the original block when our
     #       block is invoked; this would work most of the time, but it would
     #       break methods such as Enumerable#map and String#scan, whose behavior
     #       changes depending on whether or not a block is passed to them
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
-       "if block",
+       "return_value = if block",
          proxy_method_call(method_def, access, false) + " do |*block_args|",
-           # TODO(pwnall): labeling
+           proxy_yield_args_filter(label_classes, method_def),
            "block_return = yield(*block_args)",
-           # TODO(pwnall): labeling
+           # TODO(pwnall): consider adding a yield value filter
            "next block_return",
          "end",
        "else",
          proxy_method_call(method_def, access, false),
-         # TODO(pwnall): labeling
        "end",
+        proxy_return_filter(proxy_class, method_def),
+       "return return_value",
      "end"].join ';'
   end
   
@@ -107,6 +110,45 @@ module Proxying
     else
       "@__police_proxied__.__send__(:#{method_def.name}, #{arg_list})"
     end
+  end
+  
+  # The filtering of the values that a method yields to its block.
+  #
+  # @param [Array<Police::DataFlow::Label>] label_classes the label classes
+  #     supported by the proxy class
+  # @param [Method] method_def the definition of the method to be proxied
+  # @return [String] a chunk of Ruby that can be used to invoke the yield args
+  #     filters of the labels held by a proxy
+  def self.proxy_yield_args_filter(label_classes, method_def)
+    method_name = method_def.name
+    code_lines = ['labels = @__police_labels__']
+    proxy_classes.each do |label_class|
+      next unless filter_name = label_class.yield_args_filter(method_name)
+      label_key = label_class.__id__
+      code_lines << "labels[#{label_key}].each { |label, _| " \
+          "label.#{filter_name}(self, block_args, #{arg_list}) }"
+    end
+    (code_lines.length > 1) ? code_lines.join('; ') : ''
+  end
+  
+  # The filtering of a method's return value.
+  #
+  # @param [Array<Police::DataFlow::Label>] label_classes the label classes
+  #     supported by the proxy class
+  # @param [Method] method_def the definition of the method to be proxied
+  # @return [String] a chunk of Ruby that can be used to invoke the return value
+  #     filters of the labels held by a proxy
+  def self.proxy_return_filter(label_classes, method_def)
+    method_name = method_def.name
+    arg_list = proxy_argument_list method_def, false
+    code_lines = ['labels = @__police_labels__']
+    proxy_classes.each do |label_class|
+      next unless filter_name = label_class.return_filter(method_name)
+      label_key = label_class.__id__
+      code_lines << "labels[#{label_key}].each { |label, _| " \
+          "label.#{filter_name}(return_value, self, #{arg_list}) }"
+    end
+    (code_lines.length > 1) ? code_lines.join('; ') : ''
   end
   
   # The list of arguments used to define a proxy for the given method.

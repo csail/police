@@ -51,16 +51,31 @@ class ProxyBase < BasicObject
     respond_to_missing? name, true
 
     if block
-      @__police_proxied__.__send__ name, *args do |*block_args|
-        # TODO(pwnall): labeling
+      return_value = @__police_proxied__.__send__ name, *args do |*block_args|
+        # Yielded values filtering.
+        @__police_labels__.each do |_, labels|
+          next unless filter_name = labels.first.class.yield_args_filter(name)
+          labels.each do |label|
+            block_args = label.__send__ hook_name, self, *args, block_args
+          end
+        end
+        
         block_return = yield(*block_args)
-        # TODO(pwnall): labeling
+        # TODO(pwnall): consider adding a yield value filter
         next block_return
       end
     else
-      @__police_proxied__.__send__ name, *args, &block
-      # TODO(pwnall): labeling
+      return_value = @__police_proxied__.__send__ name, *args, &block
     end
+    
+    # Return value filtering.
+    @__police_labels__.each do |_, labels|
+      next unless filter_name = labels.first.class.return_filter(name)
+      labels.each do |label|
+        return_value = label.__send__ filter_name, return_value, self, *args
+      end
+    end
+    return return_value
   end
   
   # Called when Object#respond_to? returns false.
@@ -98,7 +113,15 @@ class ProxyBase < BasicObject
   #       remove instance_eval and instance_exec, so the code that gets executed
   #       using them will still have its method calls proxied correctly.
   undef ==, !=
-end
+
+  class <<self
+    # The classes of the labels supported by the proxy class.
+    #
+    # @private
+    # This is a Police::DataFlow implementation detail. Do not read it directly.
+    attr_accessor :__police_classes__
+  end  
+end  # class Police::DataFlow::ProxyBase
 
 end  # namespace Police::DataFlow
 

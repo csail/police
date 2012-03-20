@@ -6,14 +6,17 @@ module DataFlow
 module Proxies
   # A class whose instances proxy instances of a Ruby class.
   #
-  # @param [Class] klass the class whose instances will be proxied by instances
-  #     of the returned class
+  # @param [Array<Class>] classes the classes whose instances will be proxied by
+  #     instances of the returned class; the array's contents will be trashed
   # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
   #     instances of the given class
-  def self.for(klass)
-    return @classes[klass] if @classes.has_key? klass
+  def self.for(classes)
+    cache_key = classes.sort_by!(&:id)
+    return @classes[cache_key] if @classes.has_key? hash_key
+    
     proxy_class = Class.new Police::DataFlow::ProxyBase
-    @classes[klass] = proxy_class
+    proxy_class.__police_classes__ = classes.dup.freeze
+    @classes[cache_key] = proxy_class
     proxy_class
   end
 
