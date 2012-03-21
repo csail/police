@@ -2,7 +2,7 @@ require File.expand_path('../helper.rb', File.dirname(__FILE__))
 
 describe Police::DataFlow::ProxyBase do
   before do
-    @label = NoFlowFixture.new
+    @label = AutoFlowFixture.new
     @label_set = {}
     @autoflow_set = {}
     Police::DataFlow::Labeling.add_label_to_set @label, @label_set,
@@ -18,6 +18,11 @@ describe Police::DataFlow::ProxyBase do
     @proxy.route('One', 'Two').must_equal ['One', 'Two']
   end
   
+  it 'allows labels to filter the return value of public methods' do
+    # NOTE: this test exercises the slow path in method_missing
+    Police::DataFlow.labels(@proxy.route('One', 'Two')).must_equal [@label]
+  end
+  
   describe 'after proxying public methods' do
     before { @proxy.route 'One', 'Two' }
     
@@ -31,8 +36,14 @@ describe Police::DataFlow::ProxyBase do
       @proxy.route('One', 'Two').must_equal ['One', 'Two']
     end
     
+    it 'still allows labels to filter the return value of public methods' do
+      # NOTE: this test exercises the auto-generated proxy method's fast path
+      Police::DataFlow.labels(@proxy.route('One', 'Two')).must_equal [@label]
+    end
+
     it 'can still build proxies' do
-      other_proxy = @proxy_class.new ProxyingFixture.new, @proxy_class
+      other_proxy = @proxy_class.new ProxyingFixture.new, @proxy_class, 
+          @label_set, @autoflow_set
       other_proxy.route('One', 'Two').must_equal ['One', 'Two']
     end
   end
@@ -44,6 +55,13 @@ describe Police::DataFlow::ProxyBase do
     result.must_equal [['One', 'Two']]
   end
   
+  it 'allows labels to filter the yielded values of public methods' do
+    # NOTE: this test exercises the slow path in method_missing
+    @proxy.route('One', 'Two') do |*args|
+      args.each { |arg| Police::DataFlow.labels(arg).must_equal [@label] }
+    end
+  end
+
   describe 'after proxying public methods with blocks' do
     before { @proxy.route('One', 'Two') { |*args| } }
     
@@ -58,12 +76,26 @@ describe Police::DataFlow::ProxyBase do
       @proxy.route('One', 'Two') { |*args| result << args }
       result.must_equal [['One', 'Two']]
     end
+
+    it 'still allows labels to filter the yielded values of public methods' do
+      # NOTE: this test exercises the auto-generated proxy method's fast path
+      @proxy.route('One', 'Two') do |*args|
+        args.each { |arg| Police::DataFlow.labels(arg).must_equal [@label] }
+      end
+    end
   end  
 
   it 'proxies protected methods' do
     # NOTE: this test exercises the slow path in method_missing
     @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
   end
+
+  it 'allows labels to filter the return value of protected methods' do
+    # NOTE: this test exercises the slow path in method_missing
+    Police::DataFlow.labels(@proxy.__send__(:add, 'One', 'Two')).
+        must_equal [@label]
+  end
+  
   
   describe 'after proxying protected methods' do
     before { @proxy.__send__ :add, 'One', 'Two' }
@@ -77,10 +109,20 @@ describe Police::DataFlow::ProxyBase do
       # NOTE: this test exercises the auto-generated proxy method's fast path
       @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
     end
+
+    it 'still allows labels to filter the return value of protected methods' do
+      # NOTE: this test exercises the auto-generated proxy method's fast path
+      Police::DataFlow.labels(@proxy.__send__(:add, 'One', 'Two')).
+          must_equal [@label]
+    end
   end
   
   it 'proxies magic methods' do
     @proxy.magic_meth('One', 'Two').must_equal ['meth', 'One', 'Two']
+  end
+
+  it 'allows labels to filter the return value of magic methods' do
+    Police::DataFlow.labels(@proxy.magic_meth('One', 'Two')).must_equal [@label]
   end
 
   describe 'after proxying magic methods' do

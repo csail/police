@@ -149,7 +149,8 @@ module Proxying
       next unless filter_name = label_class.return_filter(method_name)
       label_key = label_class.__id__
       code_lines << "labels[#{label_key}].each { |label, _| " \
-          "label.#{filter_name}(return_value, self, #{arg_list}) }"
+          "return_value = label.#{filter_name}(return_value, self, " \
+          "#{arg_list}) }"
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end

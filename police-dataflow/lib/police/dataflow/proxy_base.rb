@@ -67,9 +67,9 @@ class ProxyBase < BasicObject
           end
         end
         
-        block_return = yield(*block_args)
+        yield_return = yield(*yield_args)
         # TODO(pwnall): consider adding a yield value filter
-        next block_return
+        next yield_return
       end
     else
       return_value = @__police_proxied__.__send__ name, *args, &block

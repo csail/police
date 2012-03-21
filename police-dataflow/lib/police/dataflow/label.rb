@@ -65,7 +65,7 @@ class Label
   #     can be replaced with Police::DataFlow.label versions if desired
   # @param [Array] args the arguments passed to the method
   def sample_yield_args_filter(receiver, yield_args, *args)
-    yield_args.map! { |arg| Police::DataFlow.label value, arg }
+    yield_args.map! { |arg| Police::DataFlow.label arg, self }
   end
 
   # An opportunity for a label to reject being used on a piece of data.
