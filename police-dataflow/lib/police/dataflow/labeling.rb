@@ -20,9 +20,7 @@ module DataFlow
     
     if Police::DataFlow::Labeling.add_label_to_set label, label_set,
                                                    autoflow_set
-      data = Police::DataFlow::Proxying.proxy proxied, label_set
-      data.__police_labels__ = label_set
-      data.__police_autoflowing__ = autoflow_set
+      data = Police::DataFlow::Proxying.proxy proxied, label_set, autoflow_set
       data
     end
     data
@@ -33,8 +31,12 @@ module DataFlow
   # @param [Object] data the data whose labels are queried
   # @return [Array<Police::DataFlow::Label>] all the labels attached to the data
   def self.labels(data)
-    return [] unless label_hash = data.__police_labels__
-    label_hash.keys
+    return [] unless label_set = data.__police_labels__
+    return label_set.first.last.keys if label_set.length == 1
+    
+    labels = []
+    label_set.each { |label_key, label_hash| labels.concat label_hash.keys }
+    labels
   end
 
 # Label algebra.
@@ -42,7 +44,7 @@ module Labeling
   # Adds a label to the set of labels held by an object's proxy.
   #
   # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] label_set the
-  #     set of all labels 
+  #     set of all labels that will be held by the object's proxy
   # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] autoflow_set
   #     the set of labels whose autoflow? method returned true
   # @return [Boolean] false if the set already had a label of the same type, so

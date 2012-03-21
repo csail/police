@@ -10,12 +10,13 @@ module Proxying
   # Creates a label-holding proxy for an object.
   #
   # @param [Object] proxied the object to be proxied
+  # @param [Array<Integer>] label_keys 
   # @return [Police::DataFlow::ProxyBase] an object that can carry labels, and
   #     performs label-propagation as it redirects received messages to the
   #     proxied object
-  def self.proxy(proxied)
-    proxy_class = Police::DataFlow::Proxies.for proxied.class
-    proxy_class.new proxied, proxy_class
+  def self.proxy(proxied, label_set, autoflow_set)
+    proxy_class = Police::DataFlow::Proxies.for proxied.class, label_set
+    proxy_class.new proxied, proxy_class, label_set, autoflow_set
   end
   
   # Creates proxies for a class' instance methods.
@@ -57,7 +58,8 @@ module Proxying
     end
     
     # Define the method.
-    proxy_class.class_eval proxy_method_definition(method_def, access)
+    proxy_class.class_eval proxy_method_definition(
+        proxy_class.__police_classes__, method_def, access)
     # Set its access level.
     proxy_class.__send__ access, method_def.name
   end
@@ -79,16 +81,16 @@ module Proxying
     #       changes depending on whether or not a block is passed to them
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
        "return_value = if block",
-         proxy_method_call(method_def, access, false) + " do |*block_args|",
+         proxy_method_call(method_def, access, false) + " do |*yield_args|",
            proxy_yield_args_filter(label_classes, method_def),
-           "block_return = yield(*block_args)",
+           "block_return = yield(*yield_args)",
            # TODO(pwnall): consider adding a yield value filter
            "next block_return",
          "end",
        "else",
          proxy_method_call(method_def, access, false),
        "end",
-        proxy_return_filter(proxy_class, method_def),
+        proxy_return_filter(label_classes, method_def),
        "return return_value",
      "end"].join ';'
   end
@@ -121,12 +123,13 @@ module Proxying
   #     filters of the labels held by a proxy
   def self.proxy_yield_args_filter(label_classes, method_def)
     method_name = method_def.name
+    arg_list = proxy_argument_list method_def, false
     code_lines = ['labels = @__police_labels__']
-    proxy_classes.each do |label_class|
+    label_classes.each do |label_class|
       next unless filter_name = label_class.yield_args_filter(method_name)
       label_key = label_class.__id__
       code_lines << "labels[#{label_key}].each { |label, _| " \
-          "label.#{filter_name}(self, block_args, #{arg_list}) }"
+          "label.#{filter_name}(self, yield_args, #{arg_list}) }"
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end
@@ -142,7 +145,7 @@ module Proxying
     method_name = method_def.name
     arg_list = proxy_argument_list method_def, false
     code_lines = ['labels = @__police_labels__']
-    proxy_classes.each do |label_class|
+    label_classes.each do |label_class|
       next unless filter_name = label_class.return_filter(method_name)
       label_key = label_class.__id__
       code_lines << "labels[#{label_key}].each { |label, _| " \

@@ -2,9 +2,14 @@ require File.expand_path('../helper.rb', File.dirname(__FILE__))
 
 describe Police::DataFlow::ProxyBase do
   before do
+    @label = NoFlowFixture.new
+    @label_set = {}
+    @autoflow_set = {}
+    Police::DataFlow::Labeling.add_label_to_set @label, @label_set,
+                                                @autoflow_set
     @proxied = ProxyingFixture.new
-    @proxy_class = Police::DataFlow::Proxies.for ProxyingFixture
-    @proxy = @proxy_class.new @proxied, @proxy_class
+    @proxy_class = Police::DataFlow::Proxies.for ProxyingFixture, @label_set
+    @proxy = @proxy_class.new @proxied, @proxy_class, @label_set, @autoflow_set
   end
   after { Police::DataFlow::Proxies.clear_cache }
   

@@ -21,7 +21,7 @@ class ProxyBase < BasicObject
   # @private
   # This is an optimization used by the Police::DataFlow implementation. Do not
   # read it directly.
-  attr_reader :__police_autoflowing__
+  attr_reader :__police_autoflows__
   
   # Creates a proxied object.
   #
@@ -31,15 +31,19 @@ class ProxyBase < BasicObject
   #     Police::DataFlow::ProxyBase subclass being instantiated; Object
   #     instances can call Object#class to get to their class, but BasicObject
   #     instances don't have this luxury
-  def initialize(proxied, proxy_class)
+  # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] label_set the
+  #     set of all labels that will be held by the object's proxy
+  # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] autoflow_set
+  #     the set of labels whose autoflow? method returned true
+  def initialize(proxied, proxy_class, label_set, autoflow_set)
     @__police_proxied__ = proxied
-    @__police_labels__ = {}
+    @__police_labels__ = label_set
 
     # Holds the object's class, because Object#class is not available.
     @__police_class__ = proxy_class
 
     # Labels that flow automatically across method calls.
-    @__police_autoflowing__ = {}
+    @__police_autoflows__ = autoflow_set
   end
 
   # Handles method calls to the proxied object.
@@ -51,12 +55,15 @@ class ProxyBase < BasicObject
     respond_to_missing? name, true
 
     if block
-      return_value = @__police_proxied__.__send__ name, *args do |*block_args|
+      return_value = @__police_proxied__.__send__ name, *args do |*yield_args|
         # Yielded values filtering.
-        @__police_labels__.each do |_, labels|
-          next unless filter_name = labels.first.class.yield_args_filter(name)
-          labels.each do |label|
-            block_args = label.__send__ hook_name, self, *args, block_args
+        @__police_labels__.each do |_, label_hash|
+          unless filter_name = 
+              label_hash.first.first.class.yield_args_filter(name)
+            next
+          end
+          label_hash.each do |label, _|
+            block_args = label.__send__ filter_name, self, yield_args, *args
           end
         end
         
@@ -69,9 +76,9 @@ class ProxyBase < BasicObject
     end
     
     # Return value filtering.
-    @__police_labels__.each do |_, labels|
-      next unless filter_name = labels.first.class.return_filter(name)
-      labels.each do |label|
+    @__police_labels__.each do |_, label_hash|
+      next unless filter_name = label_hash.first.first.class.return_filter(name)
+      label_hash.each do |label, _|
         return_value = label.__send__ filter_name, return_value, self, *args
       end
     end
