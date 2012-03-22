@@ -8,6 +8,7 @@ end  # namespace Police
 
 
 require 'police/dataflow/core_extensions.rb'
+require 'police/dataflow/guarding.rb'
 require 'police/dataflow/label.rb'
 require 'police/dataflow/labeling.rb'
 require 'police/dataflow/proxies.rb'
