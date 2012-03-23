@@ -58,12 +58,9 @@ class ProxyBase < BasicObject
       return_value = @__police_proxied__.__send__ name, *args do |*yield_args|
         # Yielded values filtering.
         @__police_labels__.each do |_, label_hash|
-          unless filter_name = 
-              label_hash.first.first.class.yield_args_filter(name)
-            next
-          end
+          next unless hook = label_hash.first.first.class.yield_args_hook(name)
           label_hash.each do |label, _|
-            block_args = label.__send__ filter_name, self, yield_args, *args
+            block_args = label.__send__ hook, self, yield_args, *args
           end
         end
         
@@ -77,9 +74,9 @@ class ProxyBase < BasicObject
     
     # Return value filtering.
     @__police_labels__.each do |_, label_hash|
-      next unless filter_name = label_hash.first.first.class.return_filter(name)
+      next unless hook = label_hash.first.first.class.return_hook(name)
       label_hash.each do |label, _|
-        return_value = label.__send__ filter_name, return_value, self, *args
+        return_value = label.__send__ hook, return_value, self, *args
       end
     end
     return return_value

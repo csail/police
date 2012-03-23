@@ -14,13 +14,13 @@ class UnsafeString < Police::DataFlow::Label
     data.kind_of? String
   end
   
-  # @see Police::DataFlow::Label#return_filter
-  def self.return_filter(method_name)
+  # @see Police::DataFlow::Label#return_hook
+  def self.return_hook(method_name)
     nil
   end
   
-  # @see Police::DataFlow::Label#method_filter
-  def self.yield_args_filter(method_name)
+  # @see Police::DataFlow::Label#yield_args_hook
+  def self.yield_args_hook(method_name)
     nil
   end
 end  # namepsace Police::Labels::UnsafeString

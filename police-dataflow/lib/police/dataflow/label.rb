@@ -19,58 +19,60 @@ class Label
     true
   end
   
-  # Label method that filters a proxied method's return value.
+  # Label method changing the return value of a method in a labeled object.
   #
-  # @param [Symbol] method_name the name of the method that will be intercepted
-  #     by the label method.
-  # @return [Symbol, NilClass] the name of the label's instance method that will
-  #     be given a chance to inspect the proxied method's return value and
-  #     change it
-  def self.return_filter(method_name)
-    :sample_return_filter
+  # @param [Symbol] method_name the name of the method that will be decorated
+  #     by the label
+  # @return [Symbol, NilClass] the name of a label instance method that will
+  #     be given a chance to label the decorated method's return value
+  #
+  # @see Police::DataFlow::Label.sample_return_hook
+  def self.return_hook(method_name)
+    :sample_return_hook
   end
   
-  # Label method that filters a proxied method's yielded values.
+  # Label method changing the values yielded by a method in a labeled object.
   #
-  # @param [Symbol] method_name the name of the method that will be intercepted
-  #     by the label method.
-  # @return [Symbol, NilClass] the name of the label's instance method that will
-  #     be given a chance to inspect the proxied method's return value and
-  #     change it
-  def self.yield_args_filter(method_name)
-    :sample_yield_args_filter
+  # @param [Symbol] method_name the name of the method that will be decorated
+  #     by the label
+  # @return [Symbol, NilClass] the name of a label instance method that will
+  #     be given a chance to label the values yielded by the decorated method
+  #     to its block
+  #
+  # @see Police::DataFlow::Label.sample_yield_args_hook
+  def self.yield_args_hook(method_name)
+    :sample_yield_args_hook
   end
   
-  # Filter for a method's return value.
+  # Hook that can label a decorated method's return value.
   #
-  # @param [Object] value the method's original return value; if a method's
-  #     return is filtered by multiple labels, this might be the output of
-  #     another label's return value filter
-  # @param [Object] receiver the method's receiver
-  # @param [Array] args the arguments passed to the method
-  # @return [Object] result, or the return value of calling
-  #     Police::Dataflow.label on the result
-  def sample_return_filter(value, receiver, *args)
+  # @param [Object] value the decorated method's return value; if a method is
+  #     decorated by multiple labels, the value might be already labeled by
+  #     another label's return hook
+  # @param [Object] receiver the object that the decorated method was called on
+  # @param [Array] args the arguments passed to the decorated method
+  # @return [Object] either the un-modified value argument, or the return value
+  #     of calling Police::Dataflow.label on the value argument
+  def sample_return_hook(value, receiver, *args)
     Police::DataFlow.label value, self
   end
 
-  # Filter for the values that a method yields to its block.
+  # Hook that can label the values that a decorated method yields to its block.
   #
-  # @param [Object] value the method's original return value; if a method's
-  #     return is filtered by multiple labels, this might be the output of
-  #     another label's return value filter
-  # @param [Object] receiver the method's receiver
-  # @param [Array] yield_args the arguments yielded by the method to its block;
-  #     the array's content should be modified in-place; for example, elements
-  #     can be replaced with Police::DataFlow.label versions if desired
-  # @param [Array] args the arguments passed to the method
-  def sample_yield_args_filter(receiver, yield_args, *args)
+  # @param [Object] receiver the object that the decorated method was called on
+  # @param [Array] yield_args the arguments yielded by the decorated method to
+  #     its block; the array's elements can be replaced with the return values
+  #     of calling Police::DataFlow.label on them; if a method is
+  #     decorated by multiple labels, the values might be already labeled by
+  #     another label's yield values hook
+  # @param [Array] args the arguments passed to the decorated method
+  def sample_yield_args_hook(receiver, yield_args, *args)
     yield_args.map! { |arg| Police::DataFlow.label arg, self }
   end
 
-  # An opportunity for a label to reject being used on a piece of data.
+  # An opportunity for a label to reject being attached to a piece of data.
   #
-  # @param [Object] data the data that will receive this label
+  # @param [Object] data the data that this label will be attached to
   # @return [Boolean] true if this label can be used with the given piece of
   #     data; if this method returns false, the labeling code will raise an
   #     exception

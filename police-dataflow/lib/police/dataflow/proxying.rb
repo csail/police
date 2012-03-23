@@ -82,7 +82,7 @@ module Proxying
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
        "return_value = if block",
          proxy_method_call(method_def, access, false) + " do |*yield_args|",
-           proxy_yield_args_filter(label_classes, method_def),
+           proxy_yield_args_decorating(label_classes, method_def),
            "block_return = yield(*yield_args)",
            # TODO(pwnall): consider adding a yield value filter
            "next block_return",
@@ -90,7 +90,7 @@ module Proxying
        "else",
          proxy_method_call(method_def, access, false),
        "end",
-        proxy_return_filter(label_classes, method_def),
+        proxy_return_decorating(label_classes, method_def),
        "return return_value",
      "end"].join ';'
   end
@@ -114,43 +114,42 @@ module Proxying
     end
   end
   
-  # The filtering of the values that a method yields to its block.
+  # Code that labels the values yielded by a decorated method to its block. 
   #
   # @param [Array<Police::DataFlow::Label>] label_classes the label classes
   #     supported by the proxy class
-  # @param [Method] method_def the definition of the method to be proxied
+  # @param [Method] method_def the definition of the decorated method
   # @return [String] a chunk of Ruby that can be used to invoke the yield args
-  #     filters of the labels held by a proxy
-  def self.proxy_yield_args_filter(label_classes, method_def)
+  #     decorators of the labels held by a labeled object's proxy
+  def self.proxy_yield_args_decorating(label_classes, method_def)
     method_name = method_def.name
     arg_list = proxy_argument_list method_def, false
     code_lines = ['labels = @__police_labels__']
     label_classes.each do |label_class|
-      next unless filter_name = label_class.yield_args_filter(method_name)
+      next unless hook = label_class.yield_args_hook(method_name)
       label_key = label_class.__id__
       code_lines << "labels[#{label_key}].each { |label, _| " \
-          "label.#{filter_name}(self, yield_args, #{arg_list}) }"
+          "label.#{hook}(self, yield_args, #{arg_list}) }"
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end
   
-  # The filtering of a method's return value.
+  # Code that labels return value of a decorated method.
   #
   # @param [Array<Police::DataFlow::Label>] label_classes the label classes
   #     supported by the proxy class
   # @param [Method] method_def the definition of the method to be proxied
   # @return [String] a chunk of Ruby that can be used to invoke the return value
-  #     filters of the labels held by a proxy
-  def self.proxy_return_filter(label_classes, method_def)
+  #     decorators of the labels held by a labeled object's proxy
+  def self.proxy_return_decorating(label_classes, method_def)
     method_name = method_def.name
     arg_list = proxy_argument_list method_def, false
     code_lines = ['labels = @__police_labels__']
     label_classes.each do |label_class|
-      next unless filter_name = label_class.return_filter(method_name)
+      next unless hook = label_class.return_hook(method_name)
       label_key = label_class.__id__
       code_lines << "labels[#{label_key}].each { |label, _| " \
-          "return_value = label.#{filter_name}(return_value, self, " \
-          "#{arg_list}) }"
+          "return_value = label.#{hook}(return_value, self, #{arg_list}) }"
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end

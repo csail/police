@@ -20,8 +20,8 @@ class UnsafeStream < Police::DataFlow::Label
     data.kind_of?(IO) || data.kind_of?(StringIO)
   end
   
-  # @see Police::DataFlow::Label#return_filter
-  def self.return_filter(method_name)
+  # @see Police::DataFlow::Label#return_hook
+  def self.return_hook(method_name)
     case method_name
     when :read
       :read
@@ -30,8 +30,8 @@ class UnsafeStream < Police::DataFlow::Label
     end
   end
   
-  # @see Police::DataFlow::Label#yield_args_filter
-  def self.yield_args_filter(method_name)
+  # @see Police::DataFlow::Label#yield_args_hook
+  def self.yield_args_hook(method_name)
     nil
   end
   

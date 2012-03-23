@@ -4,11 +4,11 @@ class NoFlowFixture < Police::DataFlow::Label
     false
   end
   
-  def self.return_filter(method_name)
+  def self.return_hook(method_name)
     nil
   end
   
-  def self.yield_args_filter(filter_name)
+  def self.yield_args_hook(filter_name)
     nil
   end
 end  # class NoFlowFixture

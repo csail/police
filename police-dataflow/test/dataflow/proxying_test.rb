@@ -145,68 +145,68 @@ describe Police::DataFlow::Proxying do
     end
   end
   
-  describe '#proxy_yield_args_filter' do
+  describe '#proxy_yield_args_decorating' do
     let(:method) { ProxyingFixture.instance_method(:add) }
     
     it 'is empty if no label class is filtering' do
-      Police::DataFlow::Proxying.proxy_return_filter([NoFlowFixture], method).
-          must_equal ''
+      Police::DataFlow::Proxying.proxy_yield_args_decorating([NoFlowFixture],
+          method).must_equal ''
     end
     
     it 'works for one filtering label class' do
       golden = 'labels = @__police_labels__; ' \
         "labels[#{AutoFlowFixture.__id__}].each { |label, _| " \
-          "label.sample_yield_args_filter(self, yield_args, arg1, arg2) }"
-      Police::DataFlow::Proxying.proxy_yield_args_filter(
-          [NoFlowFixture, AutoFlowFixture], method).must_equal golden      
+          "label.sample_yield_args_hook(self, yield_args, arg1, arg2) }"
+      Police::DataFlow::Proxying.proxy_yield_args_decorating(
+          [NoFlowFixture, AutoFlowFixture], method).must_equal golden
     end
 
     it 'works for two filtering label classes' do
       label2_class = Class.new BasicObject do
-        def self.yield_args_filter(method_name)
-          :"#{method_name}_af"
+        def self.yield_args_hook(method_name)
+          :"#{method_name}_ah"
         end
       end
       golden = 'labels = @__police_labels__; ' \
         "labels[#{AutoFlowFixture.__id__}].each { |label, _| " \
-          "label.sample_yield_args_filter(self, yield_args, arg1, arg2) }; " \
+          "label.sample_yield_args_hook(self, yield_args, arg1, arg2) }; " \
         "labels[#{label2_class.__id__}].each { |label, _| " \
-          "label.add_af(self, yield_args, arg1, arg2) }"
-      Police::DataFlow::Proxying.proxy_yield_args_filter([NoFlowFixture,
-          AutoFlowFixture, label2_class], method).must_equal golden      
+          "label.add_ah(self, yield_args, arg1, arg2) }"
+      Police::DataFlow::Proxying.proxy_yield_args_decorating([NoFlowFixture,
+          AutoFlowFixture, label2_class], method).must_equal golden
     end
   end
 
-  describe '#proxy_return_filter' do
+  describe '#proxy_return_decorating' do
     let(:method) { ProxyingFixture.instance_method(:add) }
     
     it 'is empty if no label class is filtering' do
-      Police::DataFlow::Proxying.proxy_return_filter([NoFlowFixture], method).
-          must_equal ''
+      Police::DataFlow::Proxying.proxy_return_decorating([NoFlowFixture],
+          method).must_equal ''
     end
     
     it 'works for one filtering label class' do
       golden = 'labels = @__police_labels__; ' \
         "labels[#{AutoFlowFixture.__id__}].each { |label, _| " \
-          "return_value = label.sample_return_filter(return_value, self, " \
-                                                    "arg1, arg2) }"
-      Police::DataFlow::Proxying.proxy_return_filter(
+          "return_value = label.sample_return_hook(return_value, self, arg1, " \
+                                                  "arg2) }"
+      Police::DataFlow::Proxying.proxy_return_decorating(
           [NoFlowFixture, AutoFlowFixture], method).must_equal golden      
     end
 
     it 'works for two filtering label classes' do
       label2_class = Class.new BasicObject do
-        def self.return_filter(method_name)
-          :"#{method_name}_rf"
+        def self.return_hook(method_name)
+          :"#{method_name}_rh"
         end
       end
       golden = 'labels = @__police_labels__; ' \
         "labels[#{AutoFlowFixture.__id__}].each { |label, _| " \
-          "return_value = label.sample_return_filter(return_value, self, " \
-                                                    "arg1, arg2) }; " \
+          "return_value = label.sample_return_hook(return_value, self, arg1, " \
+                                                  "arg2) }; " \
         "labels[#{label2_class.__id__}].each { |label, _| " \
-          "return_value = label.add_rf(return_value, self, arg1, arg2) }"
-      Police::DataFlow::Proxying.proxy_return_filter([NoFlowFixture,
+          "return_value = label.add_rh(return_value, self, arg1, arg2) }"
+      Police::DataFlow::Proxying.proxy_return_decorating([NoFlowFixture,
           AutoFlowFixture, label2_class], method).must_equal golden      
     end
   end
