@@ -1,4 +1,4 @@
-# police
+# ![logo](ruby_police.svg "The Ruby Police") police
 
 Police is a Ruby implementation of the
 [Resin dataflow assertion framework](http://pdos.csail.mit.edu/resin/). 
