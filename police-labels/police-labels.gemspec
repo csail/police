@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "police-labels"
-  s.version = "0.0.0"
+  s.version = "0.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = "2012-03-18"
+  s.date = "2012-03-28"
   s.description = "Supplies labels impelementing safety and privacy policies"
   s.email = "victor@costan.us"
   s.extra_rdoc_files = [
@@ -17,12 +17,26 @@ Gem::Specification.new do |s|
     "README.markdown"
   ]
   s.files = [
-    "VERSION"
+    ".document",
+    "Gemfile",
+    "Gemfile.lock",
+    "LICENSE.txt",
+    "README.markdown",
+    "Rakefile",
+    "VERSION",
+    "lib/police-labels.rb",
+    "lib/police/labels.rb",
+    "lib/police/labels/unsafe_stream.rb",
+    "lib/police/labels/unsafe_string.rb",
+    "police-labels.gemspec",
+    "test/helper.rb",
+    "test/helpers/proxying_fixture.rb",
+    "test/labels/unsafe_stream_test.rb"
   ]
   s.homepage = "http://github.com/csail/police"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.17"
+  s.rubygems_version = "1.8.21"
   s.summary = "Collection of label implementations for policed applications"
 
   if s.respond_to? :specification_version then

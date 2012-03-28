@@ -1,12 +1,12 @@
 PATH
   remote: ../police-dataflow
   specs:
-    police-dataflow (0.0.0)
+    police-dataflow (0.0.1)
 
 PATH
   remote: ../police-labels
   specs:
-    police-labels (0.0.0)
+    police-labels (0.0.1)
 
 GEM
   remote: http://rubygems.org/
@@ -39,8 +39,8 @@ DEPENDENCIES
   bundler (>= 1.1.0)
   jeweler (>= 1.8.3)
   minitest (>= 2.11.2)
-  police-dataflow (>= 0.0.0)!
-  police-labels (>= 0.0.0)!
+  police-dataflow (>= 0.0.1)!
+  police-labels (>= 0.0.1)!
   rack (>= 1.4.1)
   rack-test (>= 0.6.1)
   rdoc (>= 3.12)

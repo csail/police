@@ -1,7 +1,7 @@
 source :rubygems
 
-gem 'police-dataflow', '>= 0.0.0', path: '../police-dataflow'
-gem 'police-labels', '>= 0.0.0', path: '../police-labels'
+gem 'police-dataflow', '>= 0.0.1', path: '../police-dataflow'
+gem 'police-labels', '>= 0.0.1', path: '../police-labels'
 gem 'rack', '>= 1.4.1'
 
 group :development do

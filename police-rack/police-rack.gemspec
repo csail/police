@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = "2012-03-18"
+  s.date = "2012-03-28"
   s.description = "Labels HTTP input with police labels and provides hooks for filtering the application output"
   s.email = "victor@costan.us"
   s.extra_rdoc_files = [
@@ -17,12 +17,25 @@ Gem::Specification.new do |s|
     "README.markdown"
   ]
   s.files = [
-    "VERSION"
+    ".document",
+    "Gemfile",
+    "Gemfile.lock",
+    "LICENSE.txt",
+    "README.markdown",
+    "Rakefile",
+    "VERSION",
+    "lib/police-rack.rb",
+    "lib/police/rack.rb",
+    "lib/police/rack/middleware.rb",
+    "police-rack.gemspec",
+    "test/helper.rb",
+    "test/helpers/app_fixture.rb",
+    "test/rack/middleware_test.rb"
   ]
   s.homepage = "http://github.com/csail/police"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.17"
+  s.rubygems_version = "1.8.21"
   s.summary = "Rack middleware that integrates police"
 
   if s.respond_to? :specification_version then
