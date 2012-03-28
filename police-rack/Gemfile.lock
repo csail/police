@@ -17,9 +17,9 @@ GEM
       git (>= 1.2.5)
       rake
       rdoc
-    json (1.6.5)
-    minitest (2.11.3)
-    multi_json (1.1.0)
+    json (1.6.6)
+    minitest (2.11.4)
+    multi_json (1.2.0)
     rack (1.4.1)
     rack-test (0.6.1)
       rack (>= 1.0)
