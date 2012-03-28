@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'police-dataflow', '>= 0.0.0', path: '../police-dataflow'
+gem 'police-dataflow', '>= 0.0.1', path: '../police-dataflow'
 
 group :development do
   gem 'bundler', '>= 1.1.0'
