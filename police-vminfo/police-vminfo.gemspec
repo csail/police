@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "police-vminfo"
-  s.version = "0.0.0"
+  s.version = "0.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = "2012-03-02"
+  s.date = "2012-03-28"
   s.description = "Collects information about the Ruby VM implementation details."
   s.email = "victor@costan.us"
   s.extra_rdoc_files = [
@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
   ]
   s.files = [
     ".document",
-    ".rbx/b4/b4b3f24e706a8f899de802d5b86ee686f8806e7c",
     "Gemfile",
     "Gemfile.lock",
     "LICENSE.txt",
@@ -29,15 +28,17 @@ Gem::Specification.new do |s|
     "lib/police/vminfo.rb",
     "lib/police/vminfo/objects.rb",
     "lib/police/vminfo/paths.rb",
+    "lib/police/vminfo/signature.rb",
     "police-vminfo.gemspec",
     "test/helper.rb",
-    "test/test_police-vminfo.rb",
-    "test/vminfo/object_test.rb"
+    "test/vminfo/objects_test.rb",
+    "test/vminfo/paths_test.rb",
+    "test/vminfo/signature_test.rb"
   ]
   s.homepage = "http://github.com/pwnall/police-vminfo"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.17"
+  s.rubygems_version = "1.8.21"
   s.summary = "Information about the Ruby VM internals."
 
   if s.respond_to? :specification_version then
