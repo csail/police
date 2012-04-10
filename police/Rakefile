@@ -15,7 +15,7 @@ require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
   gem.name = "police"
-  gem.homepage = "http://github.com/pwnall/police"
+  gem.homepage = "http://github.com/csail/police"
   gem.license = "MIT"
   gem.summary = %Q{Ruby implementation of the RESIN data flow assertion framework}
   gem.description = %Q{This gem is an umbrella for all the police components}

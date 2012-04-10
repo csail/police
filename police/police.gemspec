@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = "2012-02-26"
+  s.date = "2012-04-10"
   s.description = "This gem is an umbrella for all the police components"
   s.email = "victor@costan.us"
   s.extra_rdoc_files = [
@@ -29,10 +29,10 @@ Gem::Specification.new do |s|
     "test/helper.rb",
     "test/test_police.rb"
   ]
-  s.homepage = "http://github.com/pwnall/police"
+  s.homepage = "http://github.com/csail/police"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "1.8.16"
+  s.rubygems_version = "1.8.21"
   s.summary = "Ruby implementation of the RESIN data flow assertion framework"
 
   if s.respond_to? :specification_version then
