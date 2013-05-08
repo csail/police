@@ -18,6 +18,12 @@ describe Police::DataFlow::ProxyNumeric do
     @proxy_class.instance_methods.must_include :coerce
   end
 
+  it 'returns a two-element Array from coerce' do
+    coerced = @proxy.coerce 42
+    coerced.class.must_equal Array
+    coerced.length.must_equal 2
+  end
+
   it 'proxies the argument when coercing' do
     coerced = @proxy.coerce 42
     coerced[0].must_equal 42
@@ -27,5 +33,16 @@ describe Police::DataFlow::ProxyNumeric do
   it 'returns self correctly when coercing' do
     coerced = @proxy.coerce 42
     coerced[1].__id__.must_equal @proxy.__id__
+  end
+
+  it 'does not double-proxy' do
+    @proxied2 = 22
+    @proxy2 = @proxy_class.new @proxied2, @proxy_class, @label_set,
+                               @autoflow_set
+    coerced = @proxy.coerce @proxy2
+    coerced[0].__id__.must_equal @proxy2.__id__
+    coerced[1].__id__.must_equal @proxy.__id__
+    coerced.class.must_equal Array
+    coerced.length.must_equal 2
   end
 end

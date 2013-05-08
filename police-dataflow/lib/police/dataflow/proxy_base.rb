@@ -92,8 +92,8 @@ class ProxyBase < BasicObject
     # NOTE: this approach is cheaper than creating proxies one by one, because
     #       it plays nice with method caches
 
-    ::Police::DataFlow::Proxying.add_class_methods @__police_class__,
-                                                   @__police_proxied__.class
+    ::Police::DataFlow::Proxying.add_instance_methods @__police_class__,
+                                                      @__police_proxied__.class
 
     # NOTE: we don't want to create unnecessary singleton classes
     # target_methods = @__police_proxied__.singleton_methods true

@@ -1,7 +1,7 @@
 require File.expand_path('../helper.rb', File.dirname(__FILE__))
 
 describe Police::DataFlow::Proxying do
-  describe '#add_class_methods' do
+  describe '#add_instance_methods' do
     before do
       @proxy_class = Class.new BasicObject do
         def self.__police_classes__
@@ -13,7 +13,8 @@ describe Police::DataFlow::Proxying do
       @proxy = @proxy_class.new
       @proxy.instance_exec(@proxied) { |p| @__police_proxied__ = p }
 
-      Police::DataFlow::Proxying.add_class_methods @proxy_class, ProxyingFixture
+      Police::DataFlow::Proxying.add_instance_methods @proxy_class,
+                                                      ProxyingFixture
     end
 
     it 'adds public methods' do
@@ -31,7 +32,7 @@ describe Police::DataFlow::Proxying do
     end
   end
 
-  describe '#add_class_method' do
+  describe '#add_instance_method' do
     before do
       @proxy_class = Class.new BasicObject do
         def self.__police_classes__
@@ -46,8 +47,8 @@ describe Police::DataFlow::Proxying do
     describe 'with protected method with arguments' do
       before do
         @method = ProxyingFixture.instance_method :add
-        Police::DataFlow::Proxying.add_class_method @proxy_class, @method,
-                                                    :protected
+        Police::DataFlow::Proxying.add_instance_method @proxy_class, @method,
+                                                       :protected
       end
 
       it 'defines the proxying method' do
@@ -66,8 +67,8 @@ describe Police::DataFlow::Proxying do
     describe 'with public method with variable arguments and blocks' do
       before do
         @method = ProxyingFixture.instance_method :route
-        Police::DataFlow::Proxying.add_class_method @proxy_class, @method,
-                                                    :public
+        Police::DataFlow::Proxying.add_instance_method @proxy_class, @method,
+                                                       :public
       end
 
       it 'defines the proxying method' do
@@ -90,7 +91,7 @@ describe Police::DataFlow::Proxying do
     end
 
     it 'proxies protected methods' do
-      Police::DataFlow::Proxying.add_class_method @proxy_class,
+      Police::DataFlow::Proxying.add_instance_method @proxy_class,
           ProxyingFixture.instance_method(:add), :protected
       @proxy_class.protected_method_defined?(:add).must_equal true
       @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
@@ -110,7 +111,7 @@ describe Police::DataFlow::Proxying do
     end
 
     # NOTE: testing the actual behavior would just duplicate the tests for
-    #       add_class_method
+    #       add_instance_method
   end
 
   describe '#proxy_method_call' do

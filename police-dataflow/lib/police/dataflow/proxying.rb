@@ -31,17 +31,18 @@ module Proxying
   #     receive the new proxy method definitions
   # @param [Class] klass the class whose instance methods will be proxied
   # @return [NilClass] nil
-  def self.add_class_methods(proxy_class, klass)
+  def self.add_instance_methods(proxy_class, klass)
     # NOTE: this is thread-safe because, at worst, the effort of adding methods
     #       will be re-duplicated
     klass.public_instance_methods(true).each do |method|
-      add_class_method proxy_class, klass.instance_method(method), :public
+      add_instance_method proxy_class, klass.instance_method(method), :public
     end
     klass.protected_instance_methods(true).each do |method|
-      add_class_method proxy_class, klass.instance_method(method), :protected
+      add_instance_method proxy_class, klass.instance_method(method),
+                          :protected
     end
     klass.private_instance_methods(true).each do |method|
-      add_class_method proxy_class, klass.instance_method(method), :private
+      add_instance_method proxy_class, klass.instance_method(method), :private
     end
     nil
   end
@@ -52,7 +53,7 @@ module Proxying
   # @param [Method] method_def the definition of the method to be proxied
   # @param [Symbol] access the proxied method's access level (:public,
   #     :protected, or :private)
-  def self.add_class_method(proxy_class, method_def, access)
+  def self.add_instance_method(proxy_class, method_def, access)
     # Avoid redefining methods, because that blows up VM caches.
     if proxy_class.public_method_defined?(method_def.name) ||
         proxy_class.private_method_defined?(method_def.name) ||
@@ -78,10 +79,11 @@ module Proxying
   #     proxy class to define a proxy for the given method
   def self.proxy_method_definition(label_classes, method_def, access)
     # NOTE: it might be tempting to attempt to pass a block to the proxied
-    #       method at all times, and try to yield to the original block when our
-    #       block is invoked; this would work most of the time, but it would
-    #       break methods such as Enumerable#map and String#scan, whose behavior
-    #       changes depending on whether or not a block is passed to them
+    #       method at all times, and try to yield to the original block when
+    #       our block is invoked; this would work most of the time, but it
+    #       would break methods such as Enumerable#map and String#scan, whose
+    #       behavior changes depending on whether or not a block is passed to
+    #       them
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
        "return_value = if block",
          proxy_method_call(method_def, access) + " do |*yield_args|",
