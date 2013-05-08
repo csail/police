@@ -92,6 +92,10 @@ describe Police::VmInfo do
         result.wont_include const
       end
     end
+
+    it 'does not contain Bundler' do
+      result.wont_include Bundler
+    end
   end
 
   describe '#core_classes' do

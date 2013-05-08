@@ -68,8 +68,9 @@ module VmInfo
   def self.core_modules
     return @core_modules if @core_modules
 
-    output =
-        `#{Gem.ruby} -e 'puts ObjectSpace.each_object(Module).to_a.join("\n")'`
+    ruby = Gem.ruby
+    output = _kernel_backtick(
+        %Q|#{ruby} -e 'puts ObjectSpace.each_object(Module).to_a.join("\n")'|)
     modules = []
     output.split("\n").each do |name|
       next if name[0] == ?#
@@ -147,8 +148,9 @@ module VmInfo
   #     Ruby VM
   # @return [Array<UnboundMethod>] the instance methods defined by the Ruby VM
   def self.core_instance_methods(module_or_class)
-    output =
-        `#{Gem.ruby} -e 'puts #{module_or_class}.instance_methods.join("\n")'`
+    ruby = Gem.ruby
+    output = _kernel_backtick(
+        %Q|#{ruby} -e 'puts #{module_or_class}.instance_methods.join("\n")'|)
 
     methods = []
     output.split("\n").each do |name|
@@ -166,8 +168,9 @@ module VmInfo
   #     Ruby VM
   # @return [Array<UnboundMethod>] the class methods defined by the Ruby VM
   def self.core_class_methods(module_or_class)
-    output =
-        `#{Gem.ruby} -e 'puts #{module_or_class}.singleton_methods.join("\n")'`
+    ruby = Gem.ruby
+    output = _kernel_backtick(
+        %Q|#{ruby} -e 'puts #{module_or_class}.singleton_methods.join("\n")'|)
 
     methods = []
     method_names = output.split "\n"
@@ -199,6 +202,23 @@ module VmInfo
       end
     end
     value
+  end
+
+  # Executes Kernel.` without external interferences.
+  #
+  # @private
+  # This is meant for internal use only.
+  #
+  # @param {String} command the command to be executed
+  # @return {String} the command's stdout
+  def self._kernel_backtick(command)
+    if defined?(Bundler)
+      Bundler.with_clean_env do
+        Kernel.send :`, command
+      end
+    else
+      Kernel.send :`, command
+    end
   end
 end  # namespace VmInfo
 
