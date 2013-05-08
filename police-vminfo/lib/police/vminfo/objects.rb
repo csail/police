@@ -155,6 +155,7 @@ module VmInfo
     methods = []
     output.split("\n").each do |name|
       method = module_or_class.instance_method name.to_sym
+      next unless method.owner == module_or_class
       # TODO(pwnall): consider checking for re-defined core methods
       methods << method
     end
@@ -178,6 +179,7 @@ module VmInfo
     singleton_class = module_or_class.singleton_class
     output.split("\n").each do |name|
       method = singleton_class.instance_method name.to_sym
+      next unless method.owner == singleton_class
       # TODO(pwnall): consider checking for re-defined core methods
       methods << method
     end

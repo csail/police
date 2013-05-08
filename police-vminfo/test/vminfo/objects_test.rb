@@ -94,7 +94,7 @@ describe Police::VmInfo do
     end
 
     it 'does not contain Bundler' do
-      result.wont_include Bundler
+      result.map(&:to_s).wont_include 'Bundler'
     end
   end
 
@@ -343,39 +343,52 @@ describe Police::VmInfo do
                        must_include :not_a_core_method
       end
     end
+
+    describe 'on IndexError' do
+      let(:methods) { Police::VmInfo.core_class_methods(IndexError) }
+      let(:method_names) { methods.map(&:name) }
+
+      it 'does not contain inherited class method exception' do
+        method_names.wont_include :exception
+      end
+    end
   end
 
   describe "#core_instance_methods" do
-    describe 'on Object' do
+    describe 'on String' do
       before do
-        class Object
+        class String
           def not_a_core_method
           end
         end
       end
       after do
-        class Object
+        class String
           remove_method :not_a_core_method
         end
       end
 
-      let(:methods) { Police::VmInfo.core_instance_methods(Object) }
+      let(:methods) { Police::VmInfo.core_instance_methods(String) }
       let(:method_names) { methods.map(&:name) }
 
       it 'returns UnboundMethods' do
         methods.each { |method| method.must_be_instance_of UnboundMethod }
       end
 
-      it 'contains ==' do
-        method_names.must_include :==
+      it 'contains scan' do
+        method_names.must_include :scan
       end
 
       it 'does not contain not_a_core_method' do
         method_names.wont_include :not_a_core_method
 
         # Ensure that the test setup is correct.
-        Police::VmInfo.instance_methods(Object).map(&:name).
+        Police::VmInfo.instance_methods(String).map(&:name).
                        must_include :not_a_core_method
+      end
+
+      it 'does not contain inherited instance method class' do
+        methods.wont_include :class
       end
     end
   end
