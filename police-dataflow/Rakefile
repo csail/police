@@ -36,3 +36,5 @@ task :default => :test
 
 require 'yard'
 YARD::Rake::YardocTask.new
+
+Dir.glob('tasks/**/*.rake').each { |r| import r }

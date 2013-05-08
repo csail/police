@@ -17,15 +17,14 @@ module DataFlow
       proxied = data.__police_proxied__
       autoflow_set = data.__police_autoflows__
     end
-    
+
     if Police::DataFlow::Labeling.add_label_to_set label, label_set,
                                                    autoflow_set
       data = Police::DataFlow::Proxying.proxy proxied, label_set, autoflow_set
-      data
     end
     data
   end
-  
+
   # All the labels attached to a piece of data.
   #
   # @param [Object] data the data whose labels are queried
@@ -33,7 +32,7 @@ module DataFlow
   def self.labels(data)
     return [] unless label_set = data.__police_labels__
     return label_set.first.last.keys if label_set.length == 1
-    
+
     labels = []
     label_set.each { |label_key, label_hash| labels.concat label_hash.keys }
     labels
@@ -58,14 +57,14 @@ module Labeling
       # NOTE: autoflow_set uses use the same hash, so no work is necessary
       return false
     end
-    
+
     label_entry = { label => true }
     label_set[label_key] = label_entry
     autoflow_set[label_key] = label_entry if label_class.autoflow?
     true
   end
 end  # namespace Police::DataFlow::Labeling
-  
+
 end  # namespace Police::DataFlow
 
 end  # namespace Police

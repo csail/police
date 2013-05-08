@@ -17,17 +17,42 @@ module Proxies
       class_cache = {}
       @classes[proxied_class] = class_cache
     end
-     
+
     cache_key = label_set.keys.sort!.freeze
     return class_cache[cache_key] if class_cache.has_key? cache_key
-    
+
     label_classes = label_set.map { |label_key, label_hash|
       label_hash.first.first.class
     }.sort_by!(&:__id__).freeze
 
-    proxy_class = Class.new Police::DataFlow::ProxyBase
-    proxy_class.__police_classes__ = label_classes
+    proxy_class = for! proxied_class, label_classes
     class_cache[cache_key] = proxy_class
+    proxy_class
+  end
+
+  # A class whose instances proxy instances of a Ruby class.
+  #
+  # @private
+  # Use for instead of calling this directly.
+  #
+  # @param [Class] proxied_class the class whose instances will be proxied by
+  #     instances of the returned class
+  #
+  # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
+  #   instances of the given class
+  def self.for!(proxied_class, label_classes)
+    proxy_class = Class.new Police::DataFlow::ProxyBase
+    klass = proxied_class
+    until klass == nil
+      if klass == String
+        # TODO(pwnall): String-specific proxying
+        break
+      elsif klass == Numeric
+        proxy_class = Police::DataFlow::ProxyNumeric
+      end
+      klass = klass.superclass
+    end
+    proxy_class.__police_classes__ = label_classes
     proxy_class
   end
 

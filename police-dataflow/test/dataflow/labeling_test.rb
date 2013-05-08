@@ -6,61 +6,81 @@ describe Police::DataFlow do
     @class = @object.class
     @p_label = AutoFlowFixture.new
   end
-  
+
   describe '#label' do
     describe 'with a single label' do
       before do
         @object = Police::DataFlow.label @object, @p_label
       end
-      
+
       it 'labels the object correctly' do
         Police::DataFlow.labels(@object).must_equal [@p_label]
       end
-      
+
       it 'is idempotent' do
         same_object = Police::DataFlow.label @object, @p_label
         same_object.must_equal @object
         Police::DataFlow.labels(@object).must_equal [@p_label]
       end
-      
+
       it 'is idempotent vs label type' do
-        
+
       end
-      
+
       it 'returns a working proxy' do
         @object.length.must_equal 5
         @object.class.must_equal @class
       end
-      
+
       it 'returns a label-preserving proxy' do
         @object << ' world'
         @object.length.must_equal 11
         Police::DataFlow.labels(@object).must_equal [@p_label]
       end
-      
+
       it 'returns a label-propagating proxy' do
         Police::DataFlow.labels(@object[2..5]).must_equal [@p_label]
       end
     end
-    
+
     describe 'with two labels' do
       before do
         @n_label = NoFlowFixture.new
         @object = Police::DataFlow.label @object, @p_label
         @object = Police::DataFlow.label @object, @n_label
       end
-      
+
       it 'labels the object correctly' do
         Set.new(Police::DataFlow.labels(@object)).
             must_equal Set.new([@p_label, @n_label])
       end
-      
+
       it 'propagates the labels correctly' do
         Police::DataFlow.labels(@object[2..5]).must_equal [@p_label]
       end
     end
+
+    describe 'on built-in Fixnums' do
+      before do
+        @number = 21
+        @number = Police::DataFlow.label @number, @p_label
+      end
+
+      it 'returns a working proxy' do
+        (@number * 2).must_equal 42
+        (2 * @number).must_equal 42
+      end
+
+      it 'returns a label-propagating proxy' do
+        Police::DataFlow.labels(@number * 2).must_equal [@p_label]
+      end
+
+      it 'returns a label-enforcing proxy' do
+        Police::DataFlow.labels(2 * @number).must_equal [@p_label]
+      end
+    end
   end
-  
+
   describe '#labels' do
     it 'returns an empty array for un-labeled objects' do
       Police::DataFlow.labels(@object).must_equal []

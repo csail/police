@@ -10,7 +10,7 @@ module Proxying
   # Creates a label-holding proxy for an object.
   #
   # @param [Object] proxied the object to be proxied
-  # @param [Array<Integer>] label_keys 
+  # @param [Array<Integer>] label_keys
   # @return [Police::DataFlow::ProxyBase] an object that can carry labels, and
   #     performs label-propagation as it redirects received messages to the
   #     proxied object
@@ -18,7 +18,7 @@ module Proxying
     proxy_class = Police::DataFlow::Proxies.for proxied.class, label_set
     proxy_class.new proxied, proxy_class, label_set, autoflow_set
   end
-  
+
   # Creates proxies for a class' instance methods.
   #
   # The proxy methods are defined as instance methods for the proxying class,
@@ -52,18 +52,19 @@ module Proxying
   #     :protected, or :private)
   def self.add_class_method(proxy_class, method_def, access)
     # Avoid redefining methods, because that blows up VM caches.
-    if proxy_class.method_defined?(method_def.name) ||
-        proxy_class.private_method_defined?(method_def.name)
+    if proxy_class.public_method_defined?(method_def.name) ||
+        proxy_class.private_method_defined?(method_def.name) ||
+        proxy_class.protected_method_defined?(method_def.name)
       return
     end
-    
+
     # Define the method.
     proxy_class.class_eval proxy_method_definition(
         proxy_class.__police_classes__, method_def, access)
     # Set its access level.
     proxy_class.__send__ access, method_def.name
   end
-  
+
   # The full definition of a proxy method.
   #
   # @param [Array<Police::DataFlow::Label>] label_classes the label classes
@@ -94,7 +95,7 @@ module Proxying
        "return return_value",
      "end"].join ';'
   end
-  
+
   # The proxying call to a method.
   #
   # @param [Method] method_def the definition of the method to be proxied
@@ -113,8 +114,8 @@ module Proxying
       "@__police_proxied__.__send__(:#{method_def.name}, #{arg_list})"
     end
   end
-  
-  # Code that labels the values yielded by a decorated method to its block. 
+
+  # Code that labels the values yielded by a decorated method to its block.
   #
   # @param [Array<Police::DataFlow::Label>] label_classes the label classes
   #     supported by the proxy class
@@ -133,7 +134,7 @@ module Proxying
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end
-  
+
   # Code that labels return value of a decorated method.
   #
   # @param [Array<Police::DataFlow::Label>] label_classes the label classes
@@ -153,7 +154,7 @@ module Proxying
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end
-  
+
   # The list of arguments used to define a proxy for the given method.
   #
   # @param [Method] method_def the definition of the method to be proxied
