@@ -9,7 +9,8 @@ task :vminfo do
     methods = []
     Police::VmInfo.core_class_methods(module_object).sort_by(&:to_s).
                    each do |method|
-      next unless Police::VmInfo.method_source(method) == :native
+      source = Police::VmInfo.method_source(method)
+      next unless source == :native || source == :kernel
       next if method.arity == 0
       methods << method.name
     end
@@ -21,7 +22,8 @@ task :vminfo do
     methods = []
     Police::VmInfo.core_instance_methods(module_object).sort_by(&:to_s).
                    each do |method|
-      next unless Police::VmInfo.method_source(method) == :native
+      source = Police::VmInfo.method_source(method)
+      next unless source == :native || source == :kernel
       next if method.arity == 0
       methods << method.name
     end

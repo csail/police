@@ -6,6 +6,8 @@ module DataFlow
 #
 # ProxyBase is the superclass for all proxy classes, which makes it visible to
 # application code. For this reason, we avoid defining any methods there.
+require 'police/vminfo'
+
 module Proxying
   # Creates a label-holding proxy for an object.
   #
@@ -82,14 +84,14 @@ module Proxying
     #       changes depending on whether or not a block is passed to them
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
        "return_value = if block",
-         proxy_method_call(method_def, access, false) + " do |*yield_args|",
+         proxy_method_call(method_def, access) + " do |*yield_args|",
            proxy_yield_args_decorating(label_classes, method_def),
            "block_return = yield(*yield_args)",
            # TODO(pwnall): consider adding a yield value filter
            "next block_return",
          "end",
        "else",
-         proxy_method_call(method_def, access, false),
+         proxy_method_call(method_def, access),
        "end",
         proxy_return_decorating(label_classes, method_def),
        "return return_value",
@@ -101,17 +103,19 @@ module Proxying
   # @param [Method] method_def the definition of the method to be proxied
   # @param [Symbol] access the proxied method's access level (:public,
   #     :protected, or :private)
-  # @param [Boolean] include_block if true, the method call passes the block
-  #     that the proxy has received; if false, the block is ignored
   # @return [String] a chunk of Ruby that can be used to call the given method
   #     when defining a proxy for it
-  def self.proxy_method_call(method_def, access, include_block)
-    arg_list = proxy_argument_list method_def, include_block
+  def self.proxy_method_call(method_def, access)
+    arg_list = proxy_call_argument_list method_def
 
     if access == :public
       "@__police_proxied__.#{method_def.name}(#{arg_list})"
     else
-      "@__police_proxied__.__send__(:#{method_def.name}, #{arg_list})"
+      if arg_list.empty?
+        "@__police_proxied__.__send__(:#{method_def.name})"
+      else
+        "@__police_proxied__.__send__(:#{method_def.name}, #{arg_list})"
+      end
     end
   end
 
@@ -140,8 +144,8 @@ module Proxying
   # @param [Array<Police::DataFlow::Label>] label_classes the label classes
   #     supported by the proxy class
   # @param [Method] method_def the definition of the method to be proxied
-  # @return [String] a chunk of Ruby that can be used to invoke the return value
-  #     decorators of the labels held by a labeled object's proxy
+  # @return [String] a chunk of Ruby that can be used to invoke the return
+  #     value decorators of the labels held by a labeled object's proxy
   def self.proxy_return_decorating(label_classes, method_def)
     method_name = method_def.name
     arg_list = proxy_argument_list method_def, false
@@ -158,8 +162,9 @@ module Proxying
   # The list of arguments used to define a proxy for the given method.
   #
   # @param [Method] method_def the definition of the method to be proxied
-  # @param [Boolean] captue_block if true, the method captures the block that it
-  #     receives
+  # @param [Boolean] captue_block if true, the method captures the block that
+  #     it receives; this should be true when the returned code is used in
+  #     method definitions, and false when it is used in method calls
   # @return [String] a chunk of Ruby that can be used as the argument list when
   #     defining a proxy for the given method
   def self.proxy_argument_list(method_def, capture_block)
@@ -171,6 +176,53 @@ module Proxying
       ((1..(-method_def.arity - 1)).map { |i| "arg#{i}" } << '*args')
     end
     arg_list << '&block' if capture_block
+    arg_list.join ', '
+  end
+
+  # The list of arguments used to call a proxied method.
+  #
+  # This assumes that the proxy method definition uses the code retuned by
+  # proxy_argument_list.
+  #
+  # @param [Method] method_def the definition of the method to be proxied;
+  #     should match the value passed to proxy_argument_list
+  # @return [String] a chunk of Ruby that can be used as the argument list when
+  #     defining a proxy for the given method
+  def self.proxy_call_argument_list(method_def)
+    source = Police::VmInfo.method_source method_def
+    if source == :native || source == :kernel
+      proxy_low_level_call_argument_list method_def
+    else
+      proxy_argument_list method_def, false
+    end
+  end
+
+  # The list of arguments used to call a proxied low-level method.
+  #
+  # Low-level methods don't use Ruby methods to manipulate their arguments, so
+  # they can't work on proxies, and need to receive the proxied objects
+  # as arguments.
+  #
+  # @param [Method] method_def the definition of the method to be proxied;
+  #     should match the value passed to proxy_argument_list
+  # @return [String] a chunk of Ruby that can be used as the argument list when
+  #     defining a proxy for the given method
+  def self.proxy_low_level_call_argument_list(method_def)
+    arg_list = if method_def.arity >= 0
+      # Fixed number of arguments.
+      (1..method_def.arity).map do |i|
+        "(nil == arg#{i}.__police_labels__) ? arg#{i} : " +
+            "arg#{i}.__police_proxied__"
+      end
+    else
+      # Variable number of arguments.
+      args_mapper =  '*(args.map { |a| (nil == a.__police_labels__) ? a : ' +
+          'a.__police_proxied__ })'
+      ((1..(-method_def.arity - 1)).map { |i|
+        "(nil == arg#{i}.__police_labels__) ? arg#{i} : " +
+            "arg#{i}.__police_proxied__"
+      } << args_mapper)
+    end
     arg_list.join ', '
   end
 end  # namespace Police::DataFlow::Proxying
