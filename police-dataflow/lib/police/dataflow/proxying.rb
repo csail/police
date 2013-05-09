@@ -55,9 +55,8 @@ module Proxying
   #     :protected, or :private)
   def self.add_instance_method(proxy_class, method_def, access)
     # Avoid redefining methods, because that blows up VM caches.
-    if proxy_class.public_method_defined?(method_def.name) ||
-        proxy_class.private_method_defined?(method_def.name) ||
-        proxy_class.protected_method_defined?(method_def.name)
+    if proxy_class.method_defined?(method_def.name) ||
+        proxy_class.private_method_defined?(method_def.name)
       return
     end
 

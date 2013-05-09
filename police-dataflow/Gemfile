@@ -1,4 +1,4 @@
-source :rubygems
+source 'https://rubygems.org'
 
 gem 'police-vminfo', '>= 0.0.2', path: '../police-vminfo'
 

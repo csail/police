@@ -62,8 +62,7 @@ describe Police::DataFlow do
 
     describe 'on built-in Fixnums' do
       before do
-        @number = 21
-        @number = Police::DataFlow.label @number, @p_label
+        @number = Police::DataFlow.label 21, @p_label
       end
 
       it 'returns a working proxy' do

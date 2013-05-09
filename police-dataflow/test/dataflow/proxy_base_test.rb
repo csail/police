@@ -16,12 +16,16 @@ describe Police::DataFlow::ProxyBase do
   after { Police::DataFlow::Proxies.clear_cache }
 
   it 'proxies public methods' do
-    # NOTE: this test exercises the slow path in method_missing
+    # NOTE: this test exercises the define-and-call path in method_missing
     @proxy.route('One', 'Two').must_equal ['One', 'Two']
   end
 
+  it 'proxies method_missing methods' do
+    @proxy.magic_
+  end
+
   it 'allows labels to filter the return value of public methods' do
-    # NOTE: this test exercises the slow path in method_missing
+    # NOTE: this test exercises the re-call path in method_missing
     Police::DataFlow.labels(@proxy.route('One', 'Two')).must_equal [@label]
   end
 
@@ -119,20 +123,30 @@ describe Police::DataFlow::ProxyBase do
     end
   end
 
-  it 'proxies magic methods' do
+  it 'proxies method_missing methods' do
+    # NOTE: ths test exercises the method_missing+send slow proxying path.
     @proxy.magic_meth('One', 'Two').must_equal ['meth', 'One', 'Two']
   end
 
-  it 'allows labels to filter the return value of magic methods' do
-    Police::DataFlow.labels(@proxy.magic_meth('One', 'Two')).must_equal [@label]
+  it 'proxies method_missing methods with blocks' do
+    # NOTE: ths test exercises the method_missing+send slow proxying path.
+    @proxy.magic_meth('One', 'Two') { |*args|
+      args.must_equal ['One', 'Two']
+      args
+    }.must_equal ['meth', ['One', 'Two']]
   end
 
-  describe 'after proxying magic methods' do
+  it 'allows labels to filter the return value of method_missing methods' do
+    Police::DataFlow.labels(@proxy.magic_meth('One', 'Two')).
+                     must_equal [@label]
+  end
+
+  describe 'after proxying method_missing methods' do
     before do
       @proxy.magic_meth 'One', 'Two'
     end
 
-    it 'does not define magic proxied methods' do
+    it 'does not define proxied methods' do
       @proxy_class.public_method_defined?(:magic_meth).must_equal false
     end
   end

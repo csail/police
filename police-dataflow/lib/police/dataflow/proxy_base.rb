@@ -54,6 +54,13 @@ class ProxyBase < BasicObject
     # Build a fast path for future method calls, if possible.
     respond_to_missing? name, true
 
+    # NOTE: going out of our way to use the fast path methods, because they
+    #       handle native method argument unwrapping correctly
+    if @__police_class__.method_defined?(name) ||
+        @__police_class__.private_method_defined?(name)
+      return __send__(name, *args, &block)
+    end
+
     if block
       return_value = @__police_proxied__.__send__ name, *args do |*yield_args|
         # Yielded values filtering.
@@ -69,7 +76,7 @@ class ProxyBase < BasicObject
         next yield_return
       end
     else
-      return_value = @__police_proxied__.__send__ name, *args, &block
+      return_value = @__police_proxied__.__send__ name, *args
     end
 
     # Return value filtering.
