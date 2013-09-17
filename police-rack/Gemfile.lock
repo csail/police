@@ -43,6 +43,5 @@ DEPENDENCIES
   police-labels (>= 0.0.1)!
   rack (>= 1.4.1)
   rack-test (>= 0.6.1)
-  rdoc (>= 3.12)
   simplecov (>= 0.6.1)
   yard (>= 0.7)

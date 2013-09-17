@@ -60,6 +60,8 @@ module Gating
         module_object.protected_method_defined?(alias_name)
       raise RuntimeError, "#{method.inspect} was already gated"
     end
+
+    # TODO(pwnall): finish this code
   end
 end  # namespace Police::DataFlow::Guarding
 
