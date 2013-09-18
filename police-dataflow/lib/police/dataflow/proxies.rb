@@ -41,17 +41,18 @@ module Proxies
   # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
   #   instances of the given class
   def self.for!(proxied_class, label_classes)
-    proxy_class = Class.new Police::DataFlow::ProxyBase
+    proxy_class = nil
     klass = proxied_class
     until klass == nil
       if klass == String
         # TODO(pwnall): String-specific proxying
         break
       elsif klass == Numeric
-        proxy_class = Police::DataFlow::ProxyNumeric
+        proxy_class = Class.new Police::DataFlow::ProxyNumeric
       end
       klass = klass.superclass
     end
+    proxy_class ||= Class.new Police::DataFlow::ProxyBase
     proxy_class.__police_classes__ = label_classes
     proxy_class
   end

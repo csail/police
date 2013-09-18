@@ -4,9 +4,10 @@ module DataFlow
   # Attaches a label to a piece of data.
   #
   # @param [Object] data the data that will be labeled
-  # @param [Police::DataFlow::Label] label the label to be applied to the object
-  # @return [BasicObject] either the given piece of data, or a proxy that should
-  #     be used instead of it
+  # @param [Police::DataFlow::Label] label the label to be applied to the
+  #     object
+  # @return [BasicObject] either the given piece of data, or a proxy that
+  #     should be used instead of it
   def self.label(data, label)
     label_set = data.__police_labels__
     if label_set.nil?
@@ -28,7 +29,8 @@ module DataFlow
   # All the labels attached to a piece of data.
   #
   # @param [Object] data the data whose labels are queried
-  # @return [Array<Police::DataFlow::Label>] all the labels attached to the data
+  # @return [Array<Police::DataFlow::Label>] all the labels attached to the
+  #     data
   def self.labels(data)
     return [] unless label_set = data.__police_labels__
     return label_set.first.last.keys if label_set.length == 1

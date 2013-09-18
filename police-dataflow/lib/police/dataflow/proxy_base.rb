@@ -130,7 +130,8 @@ class ProxyBase < BasicObject
     # The classes of the labels supported by the proxy class.
     #
     # @private
-    # This is a Police::DataFlow implementation detail. Do not read it directly.
+    # This is a Police::DataFlow implementation detail. Do not read it
+    # directly.
     attr_accessor :__police_classes__
   end
 end  # class Police::DataFlow::ProxyBase
