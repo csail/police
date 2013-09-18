@@ -20,6 +20,7 @@ describe Police::DataFlow do
       it 'is idempotent' do
         same_object = Police::DataFlow.label @object, @p_label
         same_object.must_equal @object
+        same_object.__id__.must.equal @object.__id__
         Police::DataFlow.labels(@object).must_equal [@p_label]
       end
 

@@ -9,28 +9,30 @@ class Label
   # Labels that indicate privacy auto-flow. For example, an auto-generated
   # message that contains a user's phone number is just as sensitive as the
   # phone number.
-  # 
-  # Labels that indicate sanitization do not auto-flow. For example, a substring
-  # of an HTML-sanitized string is not necessarily HTML-sanitized.
+  #
+  # Labels that indicate sanitization do not auto-flow. For example, a
+  # substring of an HTML-sanitized string is not necessarily HTML-sanitized.
   #
   # @return [Boolean] if true, the label will be automatically added to objects
-  #     whose value is likely to be derived from other labeled objects
+  #     whose value is likely to be derived from other labeled objects; this
+  #     return value should be constant
   def self.autoflow?
     true
   end
-  
+
   # Label method changing the return value of a method in a labeled object.
   #
   # @param [Symbol] method_name the name of the method that will be decorated
   #     by the label
   # @return [Symbol, NilClass] the name of a label instance method that will
-  #     be given a chance to label the decorated method's return value
+  #     be given a chance to label the decorated method's return value; the
+  #     return value for a given method name should always be the same
   #
   # @see Police::DataFlow::Label.sample_return_hook
   def self.return_hook(method_name)
     :sample_return_hook
   end
-  
+
   # Label method changing the values yielded by a method in a labeled object.
   #
   # @param [Symbol] method_name the name of the method that will be decorated
@@ -43,7 +45,7 @@ class Label
   def self.yield_args_hook(method_name)
     :sample_yield_args_hook
   end
-  
+
   # Hook that can label a decorated method's return value.
   #
   # @param [Object] value the decorated method's return value; if a method is
