@@ -62,9 +62,15 @@ class ProxyBase < BasicObject
       return_value = @__police_proxied__.__send__ name, *args do |*yield_args|
         # Yielded values filtering.
         @__police_labels__.each do |_, label_hash|
-          next unless hook = label_hash.first.first.class.yield_args_hook(name)
-          label_hash.each do |label, _|
-            yield_args = label.__send__ hook, self, yield_args, *args
+          label_class = label_hash.first.first.class
+          if hook = label_class.yield_args_hook(name)
+            label_hash.each do |label, _|
+              yield_args = label.__send__ hook, self, yield_args, *args
+            end
+          elsif label_class.autoflow?(name)
+            label_hash.each do |label, _|
+              yield_args.map! { |arg| ::Police::DataFlow.label arg, label }
+            end
           end
         end
 
@@ -78,9 +84,15 @@ class ProxyBase < BasicObject
 
     # Return value filtering.
     @__police_labels__.each do |_, label_hash|
-      next unless hook = label_hash.first.first.class.return_hook(name)
-      label_hash.each do |label, _|
-        return_value = label.__send__ hook, return_value, self, *args
+      label_class = label_hash.first.first.class
+      if hook = label_hash.first.first.class.return_hook(name)
+        label_hash.each do |label, _|
+          return_value = label.__send__ hook, return_value, self, *args
+        end
+      elsif label_class.autoflow?(name)
+        label_hash.each do |label, _|
+          return_value = ::Police::DataFlow.label return_value, label
+        end
       end
     end
     return return_value
