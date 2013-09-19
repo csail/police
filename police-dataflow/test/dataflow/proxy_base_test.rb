@@ -4,156 +4,266 @@ describe Police::DataFlow::ProxyBase do
   before do
     Police::DataFlow::Proxies.clear_cache
 
-    @label = AutoFlowFixture.new
-    @label_set = {}
-    Police::DataFlow::Labeling.add_label_to_set @label, @label_set
+    @auto_label = AutoFlowFixture.new
+    @hook_label = HooksFlowFixture.new
+
     @proxied = ProxyingFixture.new
-    @proxy_class = ::Police::DataFlow::Proxies.for ProxyingFixture, @label_set
-    @proxy = @proxy_class.new @proxied, @proxy_class, @label_set
+
+    @auto_label_set = {}
+    Police::DataFlow::Labeling.add_label_to_set @auto_label, @auto_label_set
+    @auto_proxy_class = ::Police::DataFlow::Proxies.for ProxyingFixture,
+                                                        @auto_label_set
+    @auto_proxy = @auto_proxy_class.new @proxied, @auto_proxy_class,
+                                        @auto_label_set
+
+    @hook_label_set = {}
+    Police::DataFlow::Labeling.add_label_to_set @hook_label, @hook_label_set
+    @hook_proxy_class = ::Police::DataFlow::Proxies.for ProxyingFixture,
+                                                        @hook_label_set
+    @hook_proxy = @hook_proxy_class.new @proxied, @hook_proxy_class,
+                                                  @hook_label_set
   end
   after { Police::DataFlow::Proxies.clear_cache }
 
-  it 'proxies public methods' do
+  it 'proxies public methods through auto-flow labels' do
     # NOTE: this test exercises the define-and-call path in method_missing
-    @proxy.route('One', 'Two').must_equal ['One', 'Two']
+    @auto_proxy.route('One', 'Two').must_equal ['One', 'Two']
   end
 
-  it 'proxies method_missing methods' do
-    @proxy.magic_
+  it 'proxies public methods through hook labels' do
+    # NOTE: this test exercises the define-and-call path in method_missing
+    @hook_proxy.route('One', 'Two').must_equal ['One', 'Two']
   end
 
-  it 'allows labels to filter the return value of public methods' do
-    # NOTE: this test exercises the re-call path in method_missing
-    Police::DataFlow.labels(@proxy.route('One', 'Two')).must_equal [@label]
+  it 'allows labels to auto-flow into the return value of public methods' do
+    # NOTE: this test exercises the define-and-call path in method_missing
+    Police::DataFlow.labels(@auto_proxy.route('One', 'Two')).must_equal(
+        [@auto_label])
+  end
+
+  it 'allows labels to hook into the return value of public methods' do
+    # NOTE: this test exercises the define-and-call path in method_missing
+    Police::DataFlow.labels(@hook_proxy.route('One', 'Two')).must_equal(
+        [@hook_label])
   end
 
   describe 'after proxying public methods' do
-    before { @proxy.route 'One', 'Two' }
+    before do
+      @auto_proxy.route 'One', 'Two'
+      @hook_proxy.route 'One', 'Two'
+    end
 
     it 'defines proxied methods on the fly' do
-      @proxy_class.public_method_defined?(:route).must_equal true
-      @proxy_class.instance_method(:route).owner.must_equal @proxy_class
+      @auto_proxy_class.public_method_defined?(:route).must_equal true
+      @auto_proxy_class.instance_method(:route).owner.must_equal(
+          @auto_proxy_class)
+      @hook_proxy_class.public_method_defined?(:route).must_equal true
+      @hook_proxy_class.instance_method(:route).owner.must_equal(
+          @hook_proxy_class)
     end
 
     it 'still proxies public methods' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
-      @proxy.route('One', 'Two').must_equal ['One', 'Two']
+      @auto_proxy.route('One', 'Two').must_equal ['One', 'Two']
+      @hook_proxy.route('One', 'Two').must_equal ['One', 'Two']
     end
 
-    it 'still allows labels to filter the return value of public methods' do
+    it 'still allows labels to auto-flow into the return value of methods' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
-      Police::DataFlow.labels(@proxy.route('One', 'Two')).must_equal [@label]
+      Police::DataFlow.labels(@auto_proxy.route('One', 'Two')).must_equal(
+          [@auto_label])
+    end
+
+    it 'still allows labels to hook into the return value of methods' do
+      # NOTE: this test exercises the auto-generated proxy method's fast path
+      Police::DataFlow.labels(@hook_proxy.route('One', 'Two')).must_equal(
+          [@hook_label])
     end
 
     it 'can still build proxies' do
-      other_proxy = @proxy_class.new ProxyingFixture.new, @proxy_class,
-          @label_set
-      other_proxy.route('One', 'Two').must_equal ['One', 'Two']
+      other_auto_proxy = @auto_proxy_class.new ProxyingFixture.new,
+          @proxy_class, @auto_label_set
+      other_auto_proxy.route('One', 'Two').must_equal ['One', 'Two']
+
+      other_hook_proxy = @hook_proxy_class.new ProxyingFixture.new,
+          @proxy_class, @hook_label_set
+      other_hook_proxy.route('One', 'Two').must_equal ['One', 'Two']
     end
   end
 
-  it 'proxies public methods with blocks' do
+  it 'proxies public methods with blocks through autoflow labels' do
     # NOTE: this test exercises the slow path in method_missing
     result = []
-    @proxy.route('One', 'Two') { |*args| result << args }
+    @auto_proxy.route('One', 'Two') { |*args| result << args }
     result.must_equal [['One', 'Two']]
   end
 
-  it 'allows labels to filter the yielded values of public methods' do
+  it 'proxies public methods with blocks through hook labels' do
+    result = []
+    @hook_proxy.route('One', 'Two') { |*args| result << args }
+    result.must_equal [['One', 'Two']]
+  end
+
+  it 'allows labels to auto-flow into the yielded values of public methods' do
     # NOTE: this test exercises the slow path in method_missing
-    @proxy.route('One', 'Two') do |*args|
-      args.each { |arg| Police::DataFlow.labels(arg).must_equal [@label] }
+    @auto_proxy.route('One', 'Two') do |*args|
+      args.each { |arg| Police::DataFlow.labels(arg).must_equal [@auto_label] }
+    end
+  end
+
+  it 'allows labels to hook into the yielded values of public methods' do
+    # NOTE: this test exercises the slow path in method_missing
+    @hook_proxy.route('One', 'Two') do |*args|
+      args.each { |arg| Police::DataFlow.labels(arg).must_equal [@hook_label] }
     end
   end
 
   describe 'after proxying public methods with blocks' do
-    before { @proxy.route('One', 'Two') { |*args| } }
-
-    it 'defines proxied methods on the fly' do
-      @proxy_class.public_method_defined?(:route).must_equal true
-      @proxy_class.instance_method(:route).owner.must_equal @proxy_class
+    before do
+      @auto_proxy.route('One', 'Two') { |*args| }
+      @hook_proxy.route('One', 'Two') { |*args| }
     end
 
-    it 'still proxies public methods with blocks' do
+    it 'defines proxied methods on the fly' do
+      @auto_proxy_class.public_method_defined?(:route).must_equal true
+      @auto_proxy_class.instance_method(:route).owner.must_equal(
+          @auto_proxy_class)
+      @hook_proxy_class.public_method_defined?(:route).must_equal true
+      @hook_proxy_class.instance_method(:route).owner.must_equal(
+          @hook_proxy_class)
+    end
+
+    it 'still proxies public methods with blocks through autoflow labels' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
       result = []
-      @proxy.route('One', 'Two') { |*args| result << args }
+      @auto_proxy.route('One', 'Two') { |*args| result << args }
       result.must_equal [['One', 'Two']]
     end
 
-    it 'still allows labels to filter the yielded values of public methods' do
+    it 'still proxies public methods with blocks through hook labels' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
-      @proxy.route('One', 'Two') do |*args|
-        args.each { |arg| Police::DataFlow.labels(arg).must_equal [@label] }
+      result = []
+      @hook_proxy.route('One', 'Two') { |*args| result << args }
+      result.must_equal [['One', 'Two']]
+    end
+
+    it 'still allows labels to auto-flow into the yielded values of methods' do
+      # NOTE: this test exercises the auto-generated proxy method's fast path
+      @hook_proxy.route('One', 'Two') do |*args|
+        args.each do |arg|
+          Police::DataFlow.labels(arg).must_equal [@hook_label]
+        end
+      end
+    end
+
+    it 'still allows labels to hook into the yielded values of methods' do
+      # NOTE: this test exercises the auto-generated proxy method's fast path
+      @hook_proxy.route('One', 'Two') do |*args|
+        args.each do |arg|
+          Police::DataFlow.labels(arg).must_equal [@hook_label]
+        end
       end
     end
   end
 
   it 'proxies protected methods' do
     # NOTE: this test exercises the slow path in method_missing
-    @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
+    @auto_proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
+    @hook_proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
   end
 
-  it 'allows labels to filter the return value of protected methods' do
+  it 'allows labels to hook into the return value of protected methods' do
     # NOTE: this test exercises the slow path in method_missing
-    Police::DataFlow.labels(@proxy.__send__(:add, 'One', 'Two')).
-        must_equal [@label]
+    Police::DataFlow.labels(@auto_proxy.__send__(:add, 'One', 'Two')).
+        must_equal [@auto_label]
   end
 
+  it 'allows labels to hook into the return value of protected methods' do
+    # NOTE: this test exercises the slow path in method_missing
+    Police::DataFlow.labels(@hook_proxy.__send__(:add, 'One', 'Two')).
+        must_equal [@hook_label]
+  end
 
   describe 'after proxying protected methods' do
-    before { @proxy.__send__ :add, 'One', 'Two' }
+    before do
+      @auto_proxy.__send__ :add, 'One', 'Two'
+      @hook_proxy.__send__ :add, 'One', 'Two'
+    end
 
     it 'defines proxied methods on the fly' do
-      @proxy_class.protected_method_defined?(:add).must_equal true
-      @proxy_class.instance_method(:add).owner.must_equal @proxy_class
+      @auto_proxy_class.protected_method_defined?(:add).must_equal true
+      @auto_proxy_class.instance_method(:add).owner.must_equal(
+          @auto_proxy_class)
+      @hook_proxy_class.protected_method_defined?(:add).must_equal true
+      @hook_proxy_class.instance_method(:add).owner.must_equal(
+          @hook_proxy_class)
     end
 
     it 'still proxies protected methods' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
-      @proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
+      @auto_proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
+      @hook_proxy.__send__(:add, 'One', 'Two').must_equal 'One, Two'
     end
 
-    it 'still allows labels to filter the return value of protected methods' do
+    it 'still allows labels to autoflow into protected methods' do
+      Police::DataFlow.labels(@auto_proxy.__send__(:add, 'One', 'Two')).
+          must_equal [@auto_label]
+    end
+
+    it 'still allows labels to hook into protected methods' do
       # NOTE: this test exercises the auto-generated proxy method's fast path
-      Police::DataFlow.labels(@proxy.__send__(:add, 'One', 'Two')).
-          must_equal [@label]
+      Police::DataFlow.labels(@hook_proxy.__send__(:add, 'One', 'Two')).
+          must_equal [@hook_label]
     end
   end
 
   it 'proxies method_missing methods' do
-    # NOTE: ths test exercises the method_missing+send slow proxying path.
-    @proxy.magic_meth('One', 'Two').must_equal ['meth', 'One', 'Two']
+    # NOTE: this test exercises the method_missing+send slow proxying path.
+    @auto_proxy.magic_meth('One', 'Two').must_equal ['meth', 'One', 'Two']
+    @hook_proxy.magic_meth('One', 'Two').must_equal ['meth', 'One', 'Two']
   end
 
   it 'proxies method_missing methods with blocks' do
-    # NOTE: ths test exercises the method_missing+send slow proxying path.
-    @proxy.magic_meth('One', 'Two') { |*args|
+    # NOTE: this test exercises the method_missing+send slow proxying path.
+    @auto_proxy.magic_meth('One', 'Two') { |*args|
+      args.must_equal ['One', 'Two']
+      args
+    }.must_equal ['meth', ['One', 'Two']]
+    @hook_proxy.magic_meth('One', 'Two') { |*args|
       args.must_equal ['One', 'Two']
       args
     }.must_equal ['meth', ['One', 'Two']]
   end
 
-  it 'allows labels to filter the return value of method_missing methods' do
-    Police::DataFlow.labels(@proxy.magic_meth('One', 'Two')).
-                     must_equal [@label]
+  it 'allows labels to auto-flow into method_missing methods' do
+    Police::DataFlow.labels(@auto_proxy.magic_meth('One', 'Two')).
+                     must_equal [@auto_label]
+  end
+
+  it 'allows labels to hook into method_missing methods' do
+    Police::DataFlow.labels(@hook_proxy.magic_meth('One', 'Two')).
+                     must_equal [@hook_label]
   end
 
   describe 'after proxying method_missing methods' do
     before do
-      @proxy.magic_meth 'One', 'Two'
+      @auto_proxy.magic_meth 'One', 'Two'
+      @hook_proxy.magic_meth 'One', 'Two'
     end
 
     it 'does not define proxied methods' do
-      @proxy_class.public_method_defined?(:magic_meth).must_equal false
+      @auto_proxy_class.public_method_defined?(:magic_meth).must_equal false
+      @hook_proxy_class.public_method_defined?(:magic_meth).must_equal false
     end
   end
 
   it 'proxies ==' do
-    (@proxy == nil).must_equal '== proxied'
+    (@auto_proxy == nil).must_equal '== proxied'
+    (@hook_proxy == nil).must_equal '== proxied'
   end
 
   it 'proxies !=' do
-    (@proxy != nil).must_equal '!= proxied'
+    (@auto_proxy != nil).must_equal '!= proxied'
+    (@hook_proxy != nil).must_equal '!= proxied'
   end
 end
