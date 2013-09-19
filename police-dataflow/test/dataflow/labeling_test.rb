@@ -25,7 +25,12 @@ describe Police::DataFlow do
       end
 
       it 'is idempotent vs label type' do
-
+        p_label2 = AutoFlowFixture.new
+        same_object = Police::DataFlow.label @object, p_label2
+        same_object.must_equal @object
+        same_object.__id__.must_equal @object.__id__
+        Police::DataFlow.labels(@object).sort_by(&:__id__).must_equal(
+            [@p_label, p_label2].sort_by(&:__id__))
       end
 
       it 'returns a working proxy' do
@@ -75,7 +80,7 @@ describe Police::DataFlow do
         Police::DataFlow.labels(@number * 2).must_equal [@p_label]
       end
 
-      it 'returns a label-enforcing proxy' do
+      it 'returns a proxy that coerces numbers correctly' do
         Police::DataFlow.labels(2 * @number).must_equal [@p_label]
       end
     end
@@ -89,6 +94,34 @@ describe Police::DataFlow do
     it 'returns a populated array for labeled objects' do
       labeled = Police::DataFlow.label @object, @p_label
       Police::DataFlow.labels(labeled).must_equal [@p_label]
+    end
+  end
+
+  describe '#proxy_class' do
+    it 'returns nil for un-labeled objects' do
+      Police::DataFlow.proxy_class(@object).must_equal nil
+    end
+
+    describe 'for proxied objects' do
+      before do
+        @labeled = Police::DataFlow.label @object, @p_label
+      end
+
+      it 'returns a ProxyBase subclass' do
+        Police::DataFlow.proxy_class(@labeled).superclass.must_equal(
+            Police::DataFlow::ProxyBase)
+      end
+
+      it "returns the proxy's real class" do
+        klass = Police::DataFlow.proxy_class @labeled
+        klass.class_eval do
+          def boom
+            'headshot'
+          end
+        end
+        lambda { @object.boom }.must_raise NoMethodError
+        @labeled.boom.must_equal 'headshot'
+      end
     end
   end
 end

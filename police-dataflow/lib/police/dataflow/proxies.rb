@@ -9,7 +9,7 @@ module Proxies
   # @param [Class] proxied_class the class whose instances will be proxied by
   #     instances of the returned class
   # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] label_set the
-  #     set of all labels that will be carried by the proxied object
+  #     set of all labels that will be held by the proxy
   # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
   #     instances of the given class
   def self.for(proxied_class, label_set)
@@ -37,7 +37,9 @@ module Proxies
   #
   # @param [Class] proxied_class the class whose instances will be proxied by
   #     instances of the returned class
-  #
+  # @param [Array<Class>] label_classes classes for all the labels that will be
+  #     held by proxies instantiated from this class; the array should not have
+  #     duplicates
   # @return [Class] a Police::DataFlow::ProxyBase subclass that can proxy
   #   instances of the given class
   def self.for!(proxied_class, label_classes)

@@ -156,6 +156,25 @@ describe Police::DataFlow::Proxying do
           [NoFlowFixture, AutoFlowFixture], method).must_equal golden
     end
 
+    it 'works for one auto-flowing label class' do
+      label2_class = Class.new BasicObject do
+        def self.yield_args_hook(method_name)
+          raise RuntimeError unless method_name == :add
+          nil
+        end
+        def self.autoflow?(method_name)
+          raise RuntimeError unless method_name == :add
+          true
+        end
+      end
+      golden = 'labels = @__police_labels__; ' \
+        "labels[#{label2_class.__id__}].each { |label, _| " \
+          "yield_args.map! { |arg| ::Police::DataFlow.label(arg, label) } " \
+        "}"
+      Police::DataFlow::Proxying.proxy_yield_args_decorating(
+          [NoFlowFixture, label2_class], method).must_equal golden
+    end
+
     it 'works for two filtering label classes' do
       label2_class = Class.new BasicObject do
         def self.yield_args_hook(method_name)
@@ -187,6 +206,24 @@ describe Police::DataFlow::Proxying do
                                                   "arg2) }"
       Police::DataFlow::Proxying.proxy_return_decorating(
           [NoFlowFixture, AutoFlowFixture], method).must_equal golden
+    end
+
+    it 'works for one auto-flowing label class' do
+      label2_class = Class.new BasicObject do
+        def self.return_hook(method_name)
+          raise RuntimeError unless method_name == :add
+          nil
+        end
+        def self.autoflow?(method_name)
+          raise RuntimeError unless method_name == :add
+          true
+        end
+      end
+      golden = 'labels = @__police_labels__; ' \
+        "labels[#{label2_class.__id__}].each { |label, _| " \
+          "return_value = ::Police::DataFlow.label(return_value, label) }"
+      Police::DataFlow::Proxying.proxy_return_decorating(
+          [NoFlowFixture, label2_class], method).must_equal golden
     end
 
     it 'works for two filtering label classes' do

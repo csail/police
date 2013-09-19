@@ -5,12 +5,10 @@ describe Police::DataFlow::ProxyNumeric do
     Police::DataFlow::Proxies.clear_cache
     @label = AutoFlowFixture.new
     @label_set = {}
-    @autoflow_set = {}
-    Police::DataFlow::Labeling.add_label_to_set @label, @label_set,
-                                                @autoflow_set
+    Police::DataFlow::Labeling.add_label_to_set @label, @label_set
     @proxied = 21
     @proxy_class = Police::DataFlow::Proxies.for @proxied.class, @label_set
-    @proxy = @proxy_class.new @proxied, @proxy_class, @label_set, @autoflow_set
+    @proxy = @proxy_class.new @proxied, @proxy_class, @label_set
   end
   after { Police::DataFlow::Proxies.clear_cache }
 
@@ -37,8 +35,7 @@ describe Police::DataFlow::ProxyNumeric do
 
   it 'does not double-proxy' do
     @proxied2 = 22
-    @proxy2 = @proxy_class.new @proxied2, @proxy_class, @label_set,
-                               @autoflow_set
+    @proxy2 = @proxy_class.new @proxied2, @proxy_class, @label_set
     coerced = @proxy.coerce @proxy2
     coerced[0].__id__.must_equal @proxy2.__id__
     coerced[1].__id__.must_equal @proxy.__id__

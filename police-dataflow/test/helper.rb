@@ -20,4 +20,4 @@ end
 Dir[File.expand_path('helpers/**/*.rb', File.dirname(__FILE__))].
     each { |h| require h }
 
-MiniTest::Unit.autorun
+MiniTest.autorun

@@ -12,7 +12,7 @@ class ProxyNumeric < ProxyBase
     if numeric.__police_labels__
       return [numeric, self]
     end
-    proxied_numeric = ::Police::DataFlow::Proxying.proxy numeric, {}, {}
+    proxied_numeric = ::Police::DataFlow::Proxying.proxy numeric, {}
     [proxied_numeric, self]
   end
 end

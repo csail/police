@@ -6,12 +6,10 @@ describe Police::DataFlow::ProxyBase do
 
     @label = AutoFlowFixture.new
     @label_set = {}
-    @autoflow_set = {}
-    Police::DataFlow::Labeling.add_label_to_set @label, @label_set,
-                                                @autoflow_set
+    Police::DataFlow::Labeling.add_label_to_set @label, @label_set
     @proxied = ProxyingFixture.new
     @proxy_class = ::Police::DataFlow::Proxies.for ProxyingFixture, @label_set
-    @proxy = @proxy_class.new @proxied, @proxy_class, @label_set, @autoflow_set
+    @proxy = @proxy_class.new @proxied, @proxy_class, @label_set
   end
   after { Police::DataFlow::Proxies.clear_cache }
 
@@ -49,7 +47,7 @@ describe Police::DataFlow::ProxyBase do
 
     it 'can still build proxies' do
       other_proxy = @proxy_class.new ProxyingFixture.new, @proxy_class,
-          @label_set, @autoflow_set
+          @label_set
       other_proxy.route('One', 'Two').must_equal ['One', 'Two']
     end
   end

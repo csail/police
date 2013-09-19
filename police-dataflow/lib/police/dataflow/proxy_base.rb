@@ -7,43 +7,40 @@ class ProxyBase < BasicObject
   # The object being proxied by this object.
   #
   # @private
-  # Use the Police::DataFlow API instead of reading this attribute directly.
+  # Use the {Police::DataFlow} API instead of reading this attribute directly.
   attr_reader :__police_proxied__
 
-  # The Label instances attached to the proxied object.
+  # The {Police::DataFlow::Label} instances attached to the proxied object.
   #
   # @private
-  # Use the Police::DataFlow API instead of reading this attribute directly.
+  # Use the {Police::DataFlow} API instead of reading this attribute directly.
   attr_reader :__police_labels__
 
-  # The subset of this object's labels whose autoflow? method returns true.
+  # The actual class of a proxy object.
+  #
+  # This is necessary because the class method for a proxy object must return
+  # the proxied object's class.
   #
   # @private
-  # This is an optimization used by the Police::DataFlow implementation. Do not
-  # read it directly.
-  attr_reader :__police_autoflows__
+  # Use the {Police::DataFlow} API instead of reading this attribute directly.
+  attr_reader :__police_class__
 
   # Creates a proxied object.
   #
   # @param [Object] proxied the object that will receive messages sent to the
   #     newly created proxy
   # @param [Class<Police::DataFlow::ProxyBase>] proxy_class the
-  #     Police::DataFlow::ProxyBase subclass being instantiated; Object
+  #     {Police::DataFlow::ProxyBase} subclass being instantiated; Object
   #     instances can call Object#class to get to their class, but BasicObject
   #     instances don't have this luxury
   # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] label_set the
   #     set of all labels that will be held by the object's proxy
-  # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] autoflow_set
-  #     the set of labels whose autoflow? method returned true
-  def initialize(proxied, proxy_class, label_set, autoflow_set)
+  def initialize(proxied, proxy_class, label_set)
     @__police_proxied__ = proxied
     @__police_labels__ = label_set
 
     # Holds the object's class, because Object#class is not available.
     @__police_class__ = proxy_class
-
-    # Labels that flow automatically across method calls.
-    @__police_autoflows__ = autoflow_set
   end
 
   # Handles method calls to the proxied object.

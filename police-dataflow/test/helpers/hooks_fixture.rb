@@ -1,14 +1,14 @@
 # Label that tests the no-autoflow behavior.
-class NoFlowFixture < Police::DataFlow::Label
+class HooksFlowFixture < Police::DataFlow::Label
   def self.autoflow?(method_name)
     false
   end
 
   def self.return_hook(method_name)
-    nil
+    :sample_return_hook
   end
 
   def self.yield_args_hook(filter_name)
-    nil
+    :sample_yield_hook
   end
-end  # class NoFlowFixture
+end  # class HooksFlowFixture

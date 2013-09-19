@@ -12,13 +12,14 @@ module Proxying
   # Creates a label-holding proxy for an object.
   #
   # @param [Object] proxied the object to be proxied
-  # @param [Array<Integer>] label_keys
+  # @param [Hash<Integer,Hash<Police::DataFlow::Label,Boolean>>] label_set the
+  #     set of all labels that will be held by the object's proxy
   # @return [Police::DataFlow::ProxyBase] an object that can carry labels, and
   #     performs label-propagation as it redirects received messages to the
   #     proxied object
-  def self.proxy(proxied, label_set, autoflow_set)
+  def self.proxy(proxied, label_set)
     proxy_class = Police::DataFlow::Proxies.for proxied.class, label_set
-    proxy_class.new proxied, proxy_class, label_set, autoflow_set
+    proxy_class.new proxied, proxy_class, label_set
   end
 
   # Creates proxies for a class' instance methods.
@@ -132,10 +133,16 @@ module Proxying
     arg_list = proxy_argument_list method_def, false
     code_lines = ['labels = @__police_labels__']
     label_classes.each do |label_class|
-      next unless hook = label_class.yield_args_hook(method_name)
-      label_key = label_class.__id__
-      code_lines << "labels[#{label_key}].each { |label, _| " \
-          "label.#{hook}(self, yield_args, #{arg_list}) }"
+      if hook = label_class.yield_args_hook(method_name)
+        label_key = label_class.__id__
+        code_lines << "labels[#{label_key}].each { |label, _| " \
+            "label.#{hook}(self, yield_args, #{arg_list}) }"
+      elsif label_class.autoflow?(method_name)
+        label_key = label_class.__id__
+        code_lines << "labels[#{label_key}].each { |label, _| " \
+            "yield_args.map! { |arg| ::Police::DataFlow.label(arg, label) } " \
+            "}"
+      end
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end
@@ -152,10 +159,15 @@ module Proxying
     arg_list = proxy_argument_list method_def, false
     code_lines = ['labels = @__police_labels__']
     label_classes.each do |label_class|
-      next unless hook = label_class.return_hook(method_name)
-      label_key = label_class.__id__
-      code_lines << "labels[#{label_key}].each { |label, _| " \
-          "return_value = label.#{hook}(return_value, self, #{arg_list}) }"
+      if hook = label_class.return_hook(method_name)
+        label_key = label_class.__id__
+        code_lines << "labels[#{label_key}].each { |label, _| " \
+            "return_value = label.#{hook}(return_value, self, #{arg_list}) }"
+      elsif label_class.autoflow?(method_name)
+        label_key = label_class.__id__
+        code_lines << "labels[#{label_key}].each { |label, _| " \
+            "return_value = ::Police::DataFlow.label(return_value, label) }"
+      end
     end
     (code_lines.length > 1) ? code_lines.join('; ') : ''
   end

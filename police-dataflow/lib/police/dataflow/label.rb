@@ -6,17 +6,23 @@ module DataFlow
 class Label
   # True for labels that automatically propagate across operations.
   #
-  # Labels that indicate privacy auto-flow. For example, an auto-generated
-  # message that contains a user's phone number is just as sensitive as the
-  # phone number.
+  # This method's return value is used for methods where the label does not
+  # provide a hook. Hooks are responsible for label propagation.
   #
-  # Labels that indicate sanitization do not auto-flow. For example, a
-  # substring of an HTML-sanitized string is not necessarily HTML-sanitized.
+  # Labels that indicate privacy should auto-flow in most cases. For example,
+  # an auto-generated message that contains a user's phone number is just as
+  # sensitive as the phone number.
   #
+  # Labels that indicate sanitization should not auto-flow by default. For
+  # example, a substring of an HTML-sanitized string is not necessarily
+  # HTML-sanitized.
+  #
+  # @param [Symbol] method_name the name of the method for which the label
+  #     should autoflow;
   # @return [Boolean] if true, the label will be automatically added to objects
-  #     whose value is likely to be derived from other labeled objects; this
-  #     return value should be constant
-  def self.autoflow?
+  #     whose value is likely to be derived from other labeled objects; the
+  #     return value for a given method name should always be the same
+  def self.autoflow?(method_name)
     true
   end
 
@@ -54,7 +60,7 @@ class Label
   # @param [Object] receiver the object that the decorated method was called on
   # @param [Array] args the arguments passed to the decorated method
   # @return [Object] either the un-modified value argument, or the return value
-  #     of calling Police::Dataflow.label on the value argument
+  #     of calling {Police::DataFlow.label} on the value argument
   def sample_return_hook(value, receiver, *args)
     Police::DataFlow.label value, self
   end
@@ -64,7 +70,7 @@ class Label
   # @param [Object] receiver the object that the decorated method was called on
   # @param [Array] yield_args the arguments yielded by the decorated method to
   #     its block; the array's elements can be replaced with the return values
-  #     of calling Police::DataFlow.label on them; if a method is
+  #     of calling {Police::DataFlow.label} on them; if a method is
   #     decorated by multiple labels, the values might be already labeled by
   #     another label's yield values hook
   # @param [Array] args the arguments passed to the decorated method
