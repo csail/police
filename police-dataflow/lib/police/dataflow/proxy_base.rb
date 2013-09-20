@@ -67,7 +67,7 @@ class ProxyBase < BasicObject
             label_hash.each do |label, _|
               yield_args = label.__send__ hook, self, yield_args, *args
             end
-          elsif label_class.autoflow?(name)
+          elsif label_class.sticky?
             label_hash.each do |label, _|
               yield_args.map! { |arg| ::Police::DataFlow.label arg, label }
             end
@@ -89,7 +89,7 @@ class ProxyBase < BasicObject
         label_hash.each do |label, _|
           return_value = label.__send__ hook, return_value, self, *args
         end
-      elsif label_class.autoflow?(name)
+      elsif label_class.sticky?
         label_hash.each do |label, _|
           return_value = ::Police::DataFlow.label return_value, label
         end

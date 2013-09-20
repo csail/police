@@ -3,7 +3,7 @@ require File.expand_path('../helper.rb', File.dirname(__FILE__))
 describe Police::DataFlow::ProxyNumeric do
   before do
     Police::DataFlow::Proxies.clear_cache
-    @label = AutoFlowFixture.new
+    @label = StickyFixture.new
     @label_set = {}
     Police::DataFlow::Labeling.add_label_to_set @label, @label_set
     @proxied = 21

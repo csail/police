@@ -1,6 +1,6 @@
 # Label that tests the noop proxying implementation.
 class NoFlowFixture < Police::DataFlow::Label
-  def self.autoflow?(method_name)
+  def self.sticky?
     false
   end
 

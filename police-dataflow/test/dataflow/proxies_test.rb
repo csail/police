@@ -28,8 +28,7 @@ describe Police::DataFlow::Proxies do
 
     it 'creates different proxies for sets of different label classes' do
       label_set = @label_set.clone
-      Police::DataFlow::Labeling.add_label_to_set AutoFlowFixture.new,
-          label_set
+      Police::DataFlow::Labeling.add_label_to_set StickyFixture.new, label_set
       Police::DataFlow::Proxies.for(ProxyingFixture, label_set).
           wont_equal result
     end

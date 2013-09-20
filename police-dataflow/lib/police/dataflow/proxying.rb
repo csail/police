@@ -137,7 +137,7 @@ module Proxying
         label_key = label_class.__id__
         code_lines << "labels[#{label_key}].each { |label, _| " \
             "label.#{hook}(self, yield_args, #{arg_list}) }"
-      elsif label_class.autoflow?(method_name)
+      elsif label_class.sticky?
         label_key = label_class.__id__
         code_lines << "labels[#{label_key}].each { |label, _| " \
             "yield_args.map! { |arg| ::Police::DataFlow.label(arg, label) } " \
@@ -163,7 +163,7 @@ module Proxying
         label_key = label_class.__id__
         code_lines << "labels[#{label_key}].each { |label, _| " \
             "return_value = label.#{hook}(return_value, self, #{arg_list}) }"
-      elsif label_class.autoflow?(method_name)
+      elsif label_class.sticky?
         label_key = label_class.__id__
         code_lines << "labels[#{label_key}].each { |label, _| " \
             "return_value = ::Police::DataFlow.label(return_value, label) }"

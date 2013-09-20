@@ -7,22 +7,19 @@ class Label
   # True for labels that automatically propagate across operations.
   #
   # This method's return value is used for methods where the label does not
-  # provide a hook. Hooks are responsible for label propagation.
+  # provide a hook. When present, hooks are responsible for label propagation.
   #
-  # Labels that indicate privacy should auto-flow in most cases. For example,
-  # an auto-generated message that contains a user's phone number is just as
+  # Labels that indicate privacy should be sticky. For example, an
+  # auto-generated message that contains a user's phone number is just as
   # sensitive as the phone number.
   #
-  # Labels that indicate sanitization should not auto-flow by default. For
-  # example, a substring of an HTML-sanitized string is not necessarily
-  # HTML-sanitized.
+  # Labels that indicate sanitization should not be sticky. For example, a
+  # substring of an HTML-sanitized string is not necessarily HTML-sanitized.
   #
-  # @param [Symbol] method_name the name of the method for which the label
-  #     should autoflow;
   # @return [Boolean] if true, the label will be automatically added to objects
   #     whose value is likely to be derived from other labeled objects; the
   #     return value for a given method name should always be the same
-  def self.autoflow?(method_name)
+  def self.sticky?
     true
   end
 

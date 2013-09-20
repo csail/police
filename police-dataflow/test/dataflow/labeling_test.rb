@@ -4,7 +4,7 @@ describe Police::DataFlow do
   before do
     @object = 'Hello'
     @class = @object.class
-    @p_label = AutoFlowFixture.new
+    @p_label = StickyFixture.new
   end
 
   describe '#label' do
@@ -25,7 +25,7 @@ describe Police::DataFlow do
       end
 
       it 'is idempotent vs label type' do
-        p_label2 = AutoFlowFixture.new
+        p_label2 = StickyFixture.new
         same_object = Police::DataFlow.label @object, p_label2
         same_object.must_equal @object
         same_object.__id__.must_equal @object.__id__

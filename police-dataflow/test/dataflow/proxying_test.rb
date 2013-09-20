@@ -100,12 +100,12 @@ describe Police::DataFlow::Proxying do
 
   describe '#proxy_method_definition' do
     it 'returns a non-empty string for a public method' do
-      Police::DataFlow::Proxying.proxy_method_definition([AutoFlowFixture],
+      Police::DataFlow::Proxying.proxy_method_definition([StickyFixture],
           ProxyingFixture.instance_method(:length), :public).length.wont_equal 0
     end
 
     it 'returns a non-empty string for a private method' do
-      Police::DataFlow::Proxying.proxy_method_definition([AutoFlowFixture],
+      Police::DataFlow::Proxying.proxy_method_definition([StickyFixture],
           ProxyingFixture.instance_method(:length), :private).length.
           wont_equal 0
     end
@@ -154,8 +154,8 @@ describe Police::DataFlow::Proxying do
           raise RuntimeError, 'Wrong method name' unless method_name == :add
           :add_yield_args_hook
         end
-        def self.autoflow?(method_name)
-          raise RuntimeError, 'autoflow? should not be called'
+        def self.sticky?
+          raise RuntimeError, 'sticky? should not be called'
         end
       end
       golden = 'labels = @__police_labels__; ' \
@@ -165,14 +165,13 @@ describe Police::DataFlow::Proxying do
           [NoFlowFixture, label2_class], method).must_equal golden
     end
 
-    it 'works for one auto-flowing label class' do
+    it 'works for one sticky label class' do
       label2_class = Class.new BasicObject do
         def self.yield_args_hook(method_name)
           raise RuntimeError, 'Wrong method name' unless method_name == :add
           nil
         end
-        def self.autoflow?(method_name)
-          raise RuntimeError, 'Wrong method name' unless method_name == :add
+        def self.sticky?
           true
         end
       end
@@ -214,8 +213,8 @@ describe Police::DataFlow::Proxying do
           raise RuntimeError, 'Wrong method name' unless method_name == :add
           'add_return_hook'
         end
-        def self.autoflow?(method_name)
-          raise RuntimeError, 'autoflow? should not be called'
+        def self.sticky?(method_name)
+          raise RuntimeError, 'sticky? should not be called'
         end
       end
       golden = 'labels = @__police_labels__; ' \
@@ -226,14 +225,13 @@ describe Police::DataFlow::Proxying do
           [NoFlowFixture, label2_class], method).must_equal golden
     end
 
-    it 'works for one auto-flowing label class' do
+    it 'works for one sticky label class' do
       label2_class = Class.new BasicObject do
         def self.return_hook(method_name)
           raise RuntimeError, 'Wrong method name' unless method_name == :add
           nil
         end
-        def self.autoflow?(method_name)
-          raise RuntimeError, 'Wrong method name' unless method_name == :add
+        def self.sticky?
           true
         end
       end

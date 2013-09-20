@@ -1,6 +1,6 @@
 # Label that tests the hook-based proxying implementation.
 class HooksFlowFixture < Police::DataFlow::Label
-  def self.autoflow?(method_name)
+  def self.sticky?
     false
   end
 
