@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "police-dataflow"
-  s.version = "0.0.1"
+  s.version = "0.0.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Victor Costan"]
-  s.date = "2013-05-08"
+  s.date = "2013-09-24"
   s.description = "Pure Ruby implementtion of data flow label propagation."
   s.email = "victor@costan.us"
   s.extra_rdoc_files = [
@@ -44,14 +44,15 @@ Gem::Specification.new do |s|
     "test/dataflow/proxy_numeric_test.rb",
     "test/dataflow/proxying_test.rb",
     "test/helper.rb",
-    "test/helpers/auto_flow_fixture.rb",
+    "test/helpers/hooks_flow_fixture.rb",
     "test/helpers/no_flow_fixture.rb",
-    "test/helpers/proxying_fixture.rb"
+    "test/helpers/proxying_fixture.rb",
+    "test/helpers/sticky_fixture.rb"
   ]
   s.homepage = "http://github.com/csail/police"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "2.0.0"
+  s.rubygems_version = "2.0.7"
   s.summary = "Data flow label propagation"
 end
 
