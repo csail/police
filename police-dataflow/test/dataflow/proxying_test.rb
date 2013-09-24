@@ -394,4 +394,147 @@ describe Police::DataFlow::Proxying do
           ProxyingFixture.instance_method(:log)).must_equal golden
     end
   end
+
+  describe '#proxy_sticky_fastpath_check' do
+    it 'works for an argument-less method' do
+      Police::DataFlow::Proxying.proxy_sticky_fastpath_check(
+          ProxyingFixture.instance_method(:length)).must_equal ''
+    end
+
+    it 'works for a one-argument method' do
+      golden =
+          'fast_sticky = (nil == arg1.__police_stickies__)'
+      Police::DataFlow::Proxying.proxy_sticky_fastpath_check(
+          ProxyingFixture.instance_method(:==)).must_equal golden
+    end
+
+    it 'works for a two-argument method' do
+      golden = 'fast_sticky = ' +
+          '(nil == arg1.__police_stickies__) && ' +
+          '(nil == arg2.__police_stickies__)'
+      Police::DataFlow::Proxying.proxy_sticky_fastpath_check(
+          ProxyingFixture.instance_method(:add)).must_equal golden
+    end
+
+    it 'works for a variable-argument method' do
+      golden = 'fast_sticky = (args.all? { |a| nil == a.__police_stickies__ })'
+      Police::DataFlow::Proxying.proxy_sticky_fastpath_check(
+          ProxyingFixture.instance_method(:route)).must_equal golden
+    end
+
+    it 'works for one fixed + variable-argument method' do
+      golden =
+          'fast_sticky = (nil == arg1.__police_stickies__) && ' +
+          '(args.all? { |a| nil == a.__police_stickies__ })'
+      Police::DataFlow::Proxying.proxy_sticky_fastpath_check(
+          ProxyingFixture.instance_method(:<=>)).must_equal golden
+    end
+
+    it 'works for two fixed + variable-argument method' do
+      golden =
+          'fast_sticky = (nil == arg1.__police_stickies__) && ' +
+          '(nil == arg2.__police_stickies__) && ' +
+          '(args.all? { |a| nil == a.__police_stickies__ })'
+      Police::DataFlow::Proxying.proxy_sticky_fastpath_check(
+          ProxyingFixture.instance_method(:log)).must_equal golden
+    end
+  end
+
+  describe '#proxy_sticky_gathering' do
+    it 'works for an argument-less method' do
+      Police::DataFlow::Proxying.proxy_sticky_gathering(
+          ProxyingFixture.instance_method(:length)).must_equal ''
+    end
+
+    it 'works for a one-argument method' do
+      golden = 'unless fast_sticky; sticky_labels = {}; ' +
+          'unless nil == arg1.__police_stickies__; ' +
+            '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                'arg1.__police_stickies__); end; end'
+      Police::DataFlow::Proxying.proxy_sticky_gathering(
+          ProxyingFixture.instance_method(:==)).must_equal golden
+    end
+
+    it 'works for a two-argument method' do
+      golden = 'unless fast_sticky; sticky_labels = {}; ' +
+          'unless nil == arg1.__police_stickies__; ' +
+            '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                'arg1.__police_stickies__); end; ' +
+          'unless nil == arg2.__police_stickies__; ' +
+            '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                'arg2.__police_stickies__); end; end'
+
+      Police::DataFlow::Proxying.proxy_sticky_gathering(
+          ProxyingFixture.instance_method(:add)).must_equal golden
+    end
+
+    it 'works for a variable-argument method' do
+      golden = 'unless fast_sticky; sticky_labels = {}; ' +
+          'args.each do |a|; ' +
+            'unless nil == a.__police_stickies__; ' +
+              '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                  'a.__police_stickies__); end; end; end'
+      Police::DataFlow::Proxying.proxy_sticky_gathering(
+          ProxyingFixture.instance_method(:route)).must_equal golden
+    end
+
+    it 'works for one fixed + variable-argument method' do
+      golden = 'unless fast_sticky; sticky_labels = {}; ' +
+          'unless nil == arg1.__police_stickies__; ' +
+            '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                'arg1.__police_stickies__); end; ' +
+          'args.each do |a|; ' +
+            'unless nil == a.__police_stickies__; ' +
+              '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                  'a.__police_stickies__); end; end; end'
+      Police::DataFlow::Proxying.proxy_sticky_gathering(
+          ProxyingFixture.instance_method(:<=>)).must_equal golden
+    end
+
+    it 'works for two fixed + variable-argument method' do
+      golden = 'unless fast_sticky; sticky_labels = {}; ' +
+          'unless nil == arg1.__police_stickies__; ' +
+            '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                'arg1.__police_stickies__); end; ' +
+          'unless nil == arg2.__police_stickies__; ' +
+            '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                'arg2.__police_stickies__); end; ' +
+          'args.each do |a|; ' +
+            'unless nil == a.__police_stickies__; ' +
+              '::Police::DataFlow::Labeling.merge_sets!(sticky_labels, ' +
+                  'a.__police_stickies__); end; end; end'
+      Police::DataFlow::Proxying.proxy_sticky_gathering(
+          ProxyingFixture.instance_method(:log)).must_equal golden
+    end
+  end
+
+  describe '#proxy_yield_sticky_decorating' do
+    it 'works for an argument-less method' do
+      Police::DataFlow::Proxying.proxy_yield_sticky_decorating(
+          ProxyingFixture.instance_method(:length)).must_equal ''
+    end
+
+    it 'works for a one-argument method' do
+      golden = 'unless fast_sticky; yield_args.map! do |a|; ' +
+          '::Police::DataFlow::Labeling.bulk_sticky_label(' +
+              'a, sticky_labels); end; end'
+      Police::DataFlow::Proxying.proxy_yield_sticky_decorating(
+          ProxyingFixture.instance_method(:==)).must_equal golden
+    end
+  end
+
+  describe '#proxy_return_sticky_decorating' do
+    it 'works for an argument-less method' do
+      Police::DataFlow::Proxying.proxy_return_sticky_decorating(
+          ProxyingFixture.instance_method(:length)).must_equal ''
+    end
+
+    it 'works for a one-argument method' do
+      golden = 'unless fast_sticky; return_value = ' +
+          '::Police::DataFlow::Labeling.bulk_sticky_label(' +
+              'return_value, sticky_labels); end'
+      Police::DataFlow::Proxying.proxy_return_sticky_decorating(
+          ProxyingFixture.instance_method(:==)).must_equal golden
+    end
+  end
 end

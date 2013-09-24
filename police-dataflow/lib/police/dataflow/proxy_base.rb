@@ -12,9 +12,20 @@ class ProxyBase < BasicObject
 
   # The {Police::DataFlow::Label} instances attached to the proxied object.
   #
+  # This is a Hash whose keys are the __id__s of the Class objects for the
+  # labels' classes. The values are sets of labels that are instances of the
+  # corresponding label classes. Sets are implemented as Hashes mapping the
+  # label instances to boolean true values.
+  #
   # @private
   # Use the {Police::DataFlow} API instead of reading this attribute directly.
   attr_reader :__police_labels__
+
+  # Attached {Police::DataFlow::Label} instances whose classes are sticky.
+  #
+  # @private
+  # This is a proxying implementation detail and should not be relied on.
+  attr_reader :__police_stickies__
 
   # The actual class of a proxy object.
   #
@@ -38,6 +49,17 @@ class ProxyBase < BasicObject
   def initialize(proxied, proxy_class, label_set)
     @__police_proxied__ = proxied
     @__police_labels__ = label_set
+
+    # Cache the sticky labels to speed up certain computations.
+    @__police_stickies__ = {}
+    @__police_labels__.each do |class_id, instance_set|
+      label_class = instance_set.first.first.class
+      next unless label_class.sticky?
+      # NOTE: the set of instances is intentionally shared with
+      #       @__police_labels__ so updates to the former are automatically
+      #       reflected in the stickies cache
+      @__police_stickies__[class_id] = instance_set
+    end
 
     # Holds the object's class, because Object#class is not available.
     @__police_class__ = proxy_class

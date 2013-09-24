@@ -85,8 +85,11 @@ module Proxying
     #       behavior changes depending on whether or not a block is passed to
     #       them
     ["def #{method_def.name}(#{proxy_argument_list(method_def, true)})",
+       proxy_sticky_fastpath_check(method_def),
+       proxy_sticky_gathering(method_def),
        "return_value = if block",
          proxy_method_call(method_def, access) + " do |*yield_args|",
+           proxy_yield_sticky_decorating(method_def),
            proxy_yield_args_decorating(label_classes, method_def),
            "block_return = yield(*yield_args)",
            # TODO(pwnall): consider adding a yield value filter
@@ -95,7 +98,9 @@ module Proxying
        "else",
          proxy_method_call(method_def, access),
        "end",
-        proxy_return_decorating(label_classes, method_def),
+
+       proxy_return_sticky_decorating(method_def),
+       proxy_return_decorating(label_classes, method_def),
        "return return_value",
      "end"].join ';'
   end
@@ -217,7 +222,7 @@ module Proxying
   # as arguments.
   #
   # @param [Method] method_def the definition of the method to be proxied;
-  #     should match the value passed to proxy_argument_list
+  #     should match the value passed to {#proxy_argument_list}
   # @return [String] a chunk of Ruby that can be used as the argument list when
   #     defining a proxy for the given method
   def self.proxy_low_level_call_argument_list(method_def)
@@ -231,12 +236,116 @@ module Proxying
       # Variable number of arguments.
       args_mapper =  '*(args.map { |a| (nil == a.__police_labels__) ? a : ' +
           'a.__police_proxied__ })'
-      ((1..(-method_def.arity - 1)).map { |i|
+      (1..(-method_def.arity - 1)).map { |i|
         "(nil == arg#{i}.__police_labels__) ? arg#{i} : " +
             "arg#{i}.__police_proxied__"
-      } << args_mapper)
+      } << args_mapper
     end
     arg_list.join ', '
+  end
+
+  # Boolean expression deciding if a proxied method received labeled arguments.
+  #
+  # If none of the method's arguments is labeled, the sticky label propagation
+  # logic can be completely bypassed.
+  #
+  # @param [Method] method_def the definition of the method to be proxied;
+  #   should match the value passed to {#proxy_argument_list}
+  # @return [String] a chunk of Ruby that sets the 'fast_sticky' local variable
+  #   to a truthy value if none of the proxied method's arguments is labeled,
+  #   and to a falsey value if at least one argument has a label
+  def self.proxy_sticky_fastpath_check(method_def)
+    # Don't generate anything for zero-argument methods.
+    return '' if method_def.arity == 0
+
+    boolean_list = if method_def.arity > 0
+      # Fixed number of arguments.
+      (1..method_def.arity).map do |i|
+        "(nil == arg#{i}.__police_stickies__)"
+      end
+    else
+      # Variable number of arguments.
+      args_boolean = '(args.all? { |a| nil == a.__police_stickies__ })'
+      (1..(-method_def.arity - 1)).map { |i|
+        "(nil == arg#{i}.__police_stickies__)"
+      } << args_boolean
+    end
+    'fast_sticky = ' + boolean_list.join(' && ')
+  end
+
+  # Code for computing the union of the arguments' sticky labels.
+  #
+  # The code is wrapped in a check that assumes the code returned by
+  # {#proxy_sticky_fastpath_check} was already executed.
+  #
+  # @param [Method] method_def the definition of the method to be proxied;
+  #   should match the value passed to {#proxy_argument_list} and
+  #   {#proxy_sticky_fastpath_check}
+  # @return [String] a chunk of Ruby that sets the 'sticky_labels' local
+  #   variable to a label set that contains all the sticky labels in the
+  #   method's arguments
+  def self.proxy_sticky_gathering(method_def)
+    # Don't generate anything for zero-argument methods.
+    return '' if method_def.arity == 0
+
+    code_lines = ['unless fast_sticky', 'sticky_labels = {}']
+    if method_def.arity > 0
+      # Fixed number of arguments.
+      1.upto method_def.arity do |i|
+        code_lines << "unless nil == arg#{i}.__police_stickies__"
+        code_lines <<   '::Police::DataFlow::Labeling.merge_sets!(' +
+                            "sticky_labels, arg#{i}.__police_stickies__)"
+        code_lines << 'end'
+      end
+    else
+      # Variable number of arguments.
+      1.upto(-method_def.arity - 1) do |i|
+        code_lines << "unless nil == arg#{i}.__police_stickies__"
+        code_lines <<   '::Police::DataFlow::Labeling.merge_sets!(' +
+                            "sticky_labels, arg#{i}.__police_stickies__)"
+        code_lines << 'end'
+      end
+      code_lines << 'args.each do |a|'
+      code_lines <<   'unless nil == a.__police_stickies__'
+      code_lines <<     '::Police::DataFlow::Labeling.merge_sets!(' +
+                            'sticky_labels, a.__police_stickies__)'
+      code_lines <<   'end'
+      code_lines << 'end'
+    end
+    code_lines << 'end'
+    code_lines.join '; '
+  end
+
+  # Code for applying argument sticky labels to a method's yielded arguments.
+  #
+  # This code assumes that the code returned by {#proxy_sticky_fastpath_check}
+  # and {#proxy_sticky_gathering} was already executed.
+  #
+  # @param [Method] method_def the definition of the method to be proxied;
+  #   should match the value passed to {#proxy_argument_list} and
+  #   {#proxy_sticky_fastpath_check}
+  # @return [String] a chunk of Ruby that sets the 'sticky_labels' local
+  #   variable to a label set that contains all the sticky labels in the
+  #   method's arguments
+  def self.proxy_yield_sticky_decorating(method_def)
+    # Don't generate anything for zero-argument methods.
+    return '' if method_def.arity == 0
+
+    'unless fast_sticky; ' +
+      'yield_args.map! do |a|; ' +
+        '::Police::DataFlow::Labeling.bulk_sticky_label(a, sticky_labels); ' +
+      'end; ' +
+    'end'
+  end
+
+  def self.proxy_return_sticky_decorating(method_def)
+    # Don't generate anything for zero-argument methods.
+    return '' if method_def.arity == 0
+
+    'unless fast_sticky; ' +
+      'return_value = ::Police::DataFlow::Labeling.bulk_sticky_label(' +
+          'return_value, sticky_labels); ' +
+    'end'
   end
 end  # namespace Police::DataFlow::Proxying
 
